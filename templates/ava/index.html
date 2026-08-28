@@ -1,0 +1,65 @@
+{% extends "ava/base.html" %}
+{% load static %}
+{% block content %}
+<section class="app-shell" aria-labelledby="page-title">
+  <header>
+    <p class="eyebrow">AI VISUAL ASSIST</p>
+    <h1 id="page-title">AVA</h1>
+    <p>Local object detection from your camera.</p>
+  </header>
+
+  <section class="camera-panel" aria-labelledby="camera-heading">
+    <h2 id="camera-heading">Live camera</h2>
+    <video id="camera" autoplay playsinline muted aria-describedby="camera-status"></video>
+    <img id="demo-frame" src="{% static 'corridor-chair-door.png' %}" alt="Prepared corridor demo with a chair obstacle, a door, a library sign, and exit signage." hidden>
+    <p id="camera-status" class="status" role="status">Camera is not connected.</p>
+  </section>
+
+  <section aria-labelledby="controls-heading">
+    <h2 id="controls-heading" class="sr-only">AVA controls</h2>
+    <div class="controls">
+      <button id="scan-button" type="button" disabled aria-pressed="false">START SCAN</button>
+      <button id="read-button" type="button" disabled>READ</button>
+      <button id="ask-button" type="button" disabled aria-pressed="false">ASK AVA</button>
+      <button id="repeat-button" type="button">REPEAT</button>
+      <button id="stop-button" type="button">STOP</button>
+      <button id="sos-button" type="button">SOS</button>
+      <button id="connect-camera-button" type="button">CONNECT CAMERA</button>
+      <button id="demo-button" type="button" aria-pressed="false">USE DEMO</button>
+      <button id="camera-switch-button" type="button" disabled>SWITCH CAMERA</button>
+    </div>
+    <p id="placeholder-note" class="hint">ASK AVA records a short local command when a Vosk model is configured. SOS creates a local priority-100 alert only; it does not contact emergency services.</p>
+  </section>
+
+  <section class="readiness" aria-labelledby="readiness-heading">
+    <h2 id="readiness-heading">Device readiness</h2>
+    <p><strong>Microphone:</strong> <span id="microphone-status">Checking…</span></p>
+    <p><strong>Listening:</strong> <span id="listening-status" role="status">Idle.</span></p>
+    <p><strong>Audio output:</strong> <span id="audio-status">Waiting for interaction…</span></p>
+    <p><strong>Speaking:</strong> <span id="speaking-status" role="status">Idle.</span></p>
+    <p><strong>Current message:</strong> <span id="spoken-message" aria-live="polite">None.</span></p>
+    <p><strong>System state:</strong> <span id="system-state" role="status">Monitoring.</span></p>
+    <label for="speech-language"><strong>Speech language:</strong></label>
+    <select id="speech-language" aria-describedby="speech-language-note">
+      <option value="en-US">English</option>
+      <option value="hi-IN">Hindi</option>
+    </select>
+    <p id="speech-language-note" class="hint">Critical phrases use a local cached phrase for the selected language when the browser provides a compatible voice.</p>
+  </section>
+
+  <section aria-labelledby="detections-heading">
+    <h2 id="detections-heading">Detections</h2>
+    <p id="detection-status" class="status" role="status" aria-live="polite">Press SCAN after granting camera access.</p>
+    <output id="inference-time" aria-live="polite"></output>
+    <output id="tracking-metrics" aria-live="polite"></output>
+    <ul id="detection-list" class="detection-list" aria-live="polite"></ul>
+  </section>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'ava/js/api.js' %}"></script>
+<script src="{% static 'ava/js/camera.js' %}"></script>
+<script src="{% static 'ava/js/speech.js' %}"></script>
+<script src="{% static 'ava/js/voice.js' %}"></script>
+<script src="{% static 'ava/js/app.js' %}"></script>
+{% endblock %}
