@@ -81,9 +81,11 @@ class SafetyEngineTests(SimpleTestCase):
         first, summary = self.engine.evaluate([self.obj()], 1000)
         second, summary = self.engine.evaluate([self.obj()], 1100)
         third, summary = self.engine.evaluate([self.obj()], 1200)
+        fourth, summary = self.engine.evaluate([self.obj()], 1300)
         self.assertEqual(first, [])
-        self.assertTrue(any(event.type == "PATH_BLOCKED" for event in second))
-        self.assertEqual(third, [])
+        self.assertEqual(second, [])
+        self.assertTrue(any(event.type == "PATH_BLOCKED" for event in third))
+        self.assertEqual(fourth, [])
         self.assertEqual(summary["path_status"], "blocked")
 
     def test_approaching_object_escalates_to_immediate_alert(self):
@@ -110,8 +112,10 @@ class SafetyEngineTests(SimpleTestCase):
     def test_path_cleared_follows_a_blocked_path(self):
         self.engine.evaluate([self.obj()], 1000)
         self.engine.evaluate([self.obj()], 1100)
-        self.engine.evaluate([], 1200)
-        events, summary = self.engine.evaluate([], 1300)
+        self.engine.evaluate([self.obj()], 1200)
+        self.engine.evaluate([], 1300)
+        self.engine.evaluate([], 1400)
+        events, summary = self.engine.evaluate([], 1500)
         self.assertTrue(any(event.type == "PATH_CLEARED" for event in events))
         self.assertEqual(summary["path_status"], "clear")
 
