@@ -1,4 +1,4 @@
-````markdown
+
 # AVA — AI Visual Assist
 
 > **From seeing objects to understanding situations.**
