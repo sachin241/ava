@@ -1,3 +1,4 @@
+````markdown
 # AVA — AI Visual Assist
 
 > **From seeing objects to understanding situations.**
@@ -6,15 +7,13 @@ AVA is a **local-first, proactive, context-aware AI assistive system** designed 
 
 Instead of simply detecting objects in a camera frame and reading them aloud, AVA continuously maintains a compact understanding of the user's immediate environment, detects meaningful changes, evaluates their relevance and safety, and communicates only what the user needs to know.
 
-The core idea is:
-
 > **AVA forgets the frames. It remembers what changed.**
 
 ---
 
-# 1. Project Vision
+## Project Vision
 
-Traditional computer-vision pipelines typically look like:
+Traditional computer-vision assistance can be represented as:
 
 ```text
 Camera → Detection → Result
@@ -44,29 +43,23 @@ TTS
 User
 ```
 
-AVA therefore focuses on the layer between:
-
-**machine perception** and **human attention**.
-
-The system should answer:
+The central question AVA tries to answer is:
 
 > **“What does this user need to know right now?”**
 
 ---
 
-# 2. Problem Statement Alignment
+## Problem Statement Alignment
 
-The selected Problem Statement is:
+AVA addresses **Problem Statement #4 — AI Assistive Technology for Persons with Visual or Hearing Impairments**.
 
-**PS #4 — AI Assistive Technology for Persons with Visual or Hearing Impairments**
+The problem statement focuses on improving accessibility in digital and physical environments and explicitly allows teams to focus on one specific accessibility challenge rather than attempting to solve everything.
 
-The problem statement describes accessibility challenges in digital and physical environments and explicitly allows teams to focus on one specific accessibility challenge.
-
-AVA focuses on:
+AVA focuses specifically on:
 
 > **Visual environmental assistance for visually impaired users.**
 
-Relevant PS capabilities incorporated into AVA include:
+Relevant capabilities from the problem statement incorporated into AVA include:
 
 * Real-time object detection
 * Text/signboard recognition
@@ -76,161 +69,146 @@ Relevant PS capabilities incorporated into AVA include:
 * Obstacle detection
 * Emergency assistance
 
-The broader PS also mentions currency/document recognition, environmental sound alerts and accessible educational content. These remain future/stretch modules rather than the core 20-hour build.
+The broader problem statement also mentions currency/document recognition, environmental sound alerts and accessible educational content. These are treated as future/stretch modules rather than core functionality.
 
 ---
 
-# 3. Core Differentiation
+# Why AVA Is Different
 
-AVA is **not** trying to compete with Google on general visual search, OCR or generic image understanding.
+AVA does **not** try to compete with general-purpose computer vision systems on the basis of having a better detector, OCR engine or language model.
 
-Products such as Google Lens and Google Lookout already provide strong visual understanding and accessibility functionality.
+Products such as Google Lens and Google Lookout already provide powerful visual understanding and accessibility features.
 
-AVA's differentiation is the **interaction model and decision architecture**.
+AVA's differentiation is the **system-level interaction model**.
 
-## Conventional Visual Assistance
+### Conventional visual assistance
 
 ```text
 User
-  ↓
+ ↓
 Point camera
-  ↓
+ ↓
 Analyze image
-  ↓
+ ↓
 Ask question
-  ↓
+ ↓
 Receive answer
 ```
 
-## AVA
+### AVA
 
 ```text
 Environment continuously changes
               ↓
-      Maintain world state
+      Maintain World State
               ↓
       Detect meaningful change
               ↓
-     Evaluate user relevance
+       Evaluate relevance
               ↓
-       Evaluate safety
+        Evaluate safety
               ↓
-      Prioritize information
+       Prioritize information
               ↓
-        Speak only when needed
+        Proactively assist
 ```
 
-### Core differentiators
+AVA therefore focuses on:
 
-| Differentiator                      | AVA  |
-| ----------------------------------- | ---- |
-| Continuous environmental state      | Core |
-| Temporal change detection           | Core |
-| User-relative spatial understanding | Core |
-| Attention / priority engine         | Core |
-| Proactive safety alerts             | Core |
-| Central speech arbitration          | Core |
-| Voice-first interaction             | Core |
-| LLM-independent safety path         | Core |
-| Local-first operation               | Core |
+* Continuous environmental state
+* Temporal change detection
+* User-relative spatial understanding
+* Attention and priority
+* Proactive safety alerts
+* Central speech arbitration
+* Voice-first interaction
+* LLM-independent safety
+* Local-first operation
 
-The innovation is therefore primarily **system-level orchestration**, not the creation of a new object detector.
+> **AVA adds the decision layer between machine perception and human attention.**
 
 ---
 
-# 4. User Experience
+# Core User Features
 
-AVA is designed around the visually impaired user's interaction model.
-
-The screen is secondary.
-
-The primary interaction is:
-
-```text
-Voice → Understanding → Spoken assistance
-```
-
-Example:
-
-### User
-
-> “Where is the door?”
-
-### AVA
-
-> “The door is on your right.”
-
----
-
-### User
-
-> “Is the path clear?”
-
-### AVA
-
-> “No. There is an obstacle ahead.”
-
----
-
-### User
-
-> “Read this sign.”
-
-### AVA
-
-> “Computer Science Laboratory.”
-
----
-
-### User
-
-> “Describe my surroundings.”
-
-### AVA
-
-> “You are in a corridor. The path ahead is clear and a door is on your right.”
-
----
-
-# 5. Feature Set
-
-AVA's user-facing functionality is intentionally curated rather than being a checklist of every PS feature.
+AVA is intentionally focused around a small set of useful capabilities rather than attempting to reproduce every possible accessibility feature.
 
 ## SEE
 
-Real-time environment perception using object detection.
+Real-time perception of relevant objects and surroundings.
+
+Powered by:
+
+* YOLO
+* Object confidence
+* Bounding-box information
+* Object tracking
+
+---
 
 ## LOCATE
 
-User-relative directional assistance.
+Answers where an object is relative to the user.
 
 Example:
 
+> “Where is the door?”
+
+AVA:
+
 > “The door is on your right.”
+
+---
 
 ## PROTECT
 
-Obstacle detection, proximity reasoning and safety alerts.
+Detects obstacles, changing proximity and path hazards.
 
 Example:
 
 > “Stop. Obstacle ahead.”
 
+---
+
 ## READ
 
-Text and signboard recognition through OCR.
+Reads visible text and signs.
 
-## COMMUNICATE
+Example:
 
-Speech-to-text input and text-to-speech output.
+> “Read this sign.”
 
-## ASSIST
+AVA:
 
-Emergency and high-priority assistance.
+> “Emergency Exit.”
 
 ---
 
-# 6. Master Architecture
+## COMMUNICATE
+
+Allows the user to interact through speech and receive spoken responses.
+
+Examples:
+
+> “Where is the door?”
+
+> “Repeat.”
+
+> “Stop.”
+
+> “Describe my surroundings.”
+
+---
+
+## ASSIST
+
+Provides high-priority emergency and exit assistance.
+
+Emergency events always receive higher priority than normal information.
+
+---
+
+# Master Architecture
 
 ```text
                          USER
@@ -256,8 +234,7 @@ Emergency and high-priority assistance.
                            │
                     ┌──────┴──────┐
                     ▼             ▼
-               CHANGE /       USER INTENT
-               EVENT ENGINE        │
+             CHANGE / EVENT     USER INTENT
                     │             │
                     └──────┬──────┘
                            ▼
@@ -293,34 +270,36 @@ WORLD STATE + USER INTENT
 
 ---
 
-# 7. Engine Architecture
+# Engine Architecture
 
-AVA is best understood as a set of specialized engines.
+AVA should be understood as a set of specialized engines.
 
-## 7.1 Perception Engine
+---
 
-### Responsibility
+## Perception Engine
 
-Determine:
+### Purpose
 
-> **What is present?**
+> **What is around me?**
 
-Primary tool:
+The perception layer is responsible for detecting what appears in the current camera frame.
+
+Primary component:
 
 **YOLO**
 
 Input:
 
 ```text
-camera frame
+Camera frame
 ```
 
 Output:
 
 ```text
-object class
-confidence
-bounding box
+Object class
+Confidence
+Bounding box
 ```
 
 Example:
@@ -333,15 +312,21 @@ Example:
 }
 ```
 
-### Important boundary
+YOLO is only the perception layer.
 
-YOLO does **not** decide whether something is dangerous.
+It does not decide:
+
+> “This chair is dangerous.”
+
+That decision belongs to later engines.
 
 ---
 
-# 8. Tracking Engine
+# Tracking Engine
 
-Tracking connects detections across time.
+Detection tells us what exists in one frame.
+
+Tracking connects observations across time.
 
 Without tracking:
 
@@ -349,6 +334,7 @@ Without tracking:
 Frame 1 → Chair
 Frame 2 → Chair
 Frame 3 → Chair
+Frame 4 → Chair
 ```
 
 With tracking:
@@ -357,38 +343,39 @@ With tracking:
 Frame 1 → Chair #17
 Frame 2 → Chair #17
 Frame 3 → Chair #17
+Frame 4 → Chair #17
 ```
 
-This enables:
+This allows AVA to determine:
 
-* object identity
-* motion estimation
-* approach detection
-* repetition suppression
-* state transitions
+* Whether the object is the same object
+* Whether it is moving
+* Whether it is approaching
+* Whether it has already been announced
+* Whether its state has changed
 
-Tracking is therefore essential for continuous assistance.
+Tracking is therefore fundamental to continuous environmental awareness.
 
 ---
 
-# 9. Spatial Engine
+# Spatial Engine
 
-The Spatial Engine answers:
+### Purpose
 
-> **Where is the object relative to the user?**
+> **Where is it relative to me?**
 
-For MVP:
-
-```text
-0–33%  → LEFT
-33–66% → CENTER
-66–100% → RIGHT
-```
-
-The bounding-box center is:
+AVA derives direction from the bounding-box position.
 
 ```python
 center_x = (x1 + x2) / 2
+```
+
+For the MVP:
+
+```text
+0–33%   → LEFT
+33–66%  → CENTER
+66–100% → RIGHT
 ```
 
 Example:
@@ -399,22 +386,26 @@ x = 50% → CENTER
 x = 82% → RIGHT
 ```
 
+This gives AVA user-relative answers such as:
+
+> “The door is on your right.”
+
 ---
 
-# 10. Relative Proximity
+# Relative Proximity
 
-For the 20-hour MVP, AVA uses **relative proximity**, not exact physical distance.
+AVA should not claim exact physical distance without appropriate calibration.
 
-A simple approximation:
+Instead, the MVP uses relative proximity:
 
 ```text
-small bounding box  → FAR
-medium               → MEDIUM
-large                → NEAR
-very large + path overlap → CRITICAL
+Small bounding box  → FAR
+Medium              → MEDIUM
+Large               → NEAR
+Very large + path overlap → CRITICAL
 ```
 
-This can be strengthened using temporal trends:
+Temporal change can then show:
 
 ```text
 FAR
@@ -426,35 +417,17 @@ NEAR
 CRITICAL
 ```
 
-### Important limitation
+This can trigger an approaching-obstacle event.
 
-Do not claim:
-
-> “The obstacle is exactly 1.7 metres away.”
-
-unless a calibrated depth mechanism supports that claim.
-
-The MVP should use:
-
-> **relative proximity estimation**
-
-A future version can add:
-
-```text
-YOLO
- +
-Monocular depth / calibrated depth
- ↓
-Improved distance estimation
-```
+Future versions can add calibrated depth or a suitable depth model.
 
 ---
 
-# 11. World State Engine
+# World State Engine
 
-The World State is AVA's short-term environmental memory.
+The World State is AVA's **short-term environmental memory**.
 
-Instead of storing raw video, it stores structured facts.
+Instead of storing thousands of raw video frames, AVA stores structured facts extracted from the environment.
 
 Example:
 
@@ -483,33 +456,29 @@ Example:
 }
 ```
 
-### Key idea
+The key idea is:
 
 > **Raw pixels are temporary. Context persists briefly.**
 
 ---
 
-# 12. Frame Management
+# Frame Management
 
-The camera may produce:
+The camera may produce 24–30 frames per second.
 
-```text
-24–30 FPS
-```
-
-AVA does **not** need to process every frame with every model.
+AVA does not need to process every frame through every model.
 
 Instead:
 
 ```text
 CAMERA
-   ↓
+  ↓
 LATEST FRAME BUFFER
-   ↓
+  ↓
 YOLO
-   ↓
+  ↓
 TRACKER
-   ↓
+  ↓
 WORLD STATE
 ```
 
@@ -520,40 +489,46 @@ OLD FRAME → DROP
 LATEST FRAME → PROCESS
 ```
 
-### Never do:
+We intentionally avoid:
 
 ```text
-Camera
- ↓
 Frame 1 waiting
 Frame 2 waiting
 Frame 3 waiting
 ...
 Frame 500 waiting
- ↓
-AI
 ```
 
-That creates stale results and growing latency.
+because stale frames increase latency.
 
-### Design principle
+The system retains:
+
+* current object identities
+* position
+* relative proximity
+* movement
+* confidence
+* last alert
+* short temporal history
+
+It does not need an ever-growing video history.
 
 > **AVA forgets the frames. It remembers what changed.**
 
 ---
 
-# 13. Change / Event Engine
+# Change / Event Engine
 
-The event engine compares the current state with the previous state.
+The Change Engine compares the current World State with the previous state.
 
 ```text
-Previous World State
-        ↓
-Current World State
-        ↓
+Previous State
+      ↓
+Current State
+      ↓
 Difference
-        ↓
-Meaningful change?
+      ↓
+Meaningful Change?
 ```
 
 Possible events:
@@ -571,17 +546,17 @@ EMERGENCY_DETECTED
 Example:
 
 ```text
-F1:
-chair = far
+Frame 1:
+Chair = FAR
 
-F2:
-chair = medium
+Frame 2:
+Chair = MEDIUM
 
-F3:
-chair = near
+Frame 3:
+Chair = NEAR
 
-F4:
-chair = center + critical
+Frame 4:
+Chair = CENTER + CRITICAL
 ```
 
 Result:
@@ -592,48 +567,54 @@ OBSTACLE_APPROACHING
 
 ---
 
-# 14. Safety Engine
+# Safety Engine
 
-The Safety Engine determines:
+The Safety Engine determines whether the current environment requires action.
 
-> **Does this situation require action?**
-
-It receives:
+It considers:
 
 ```text
-object
+Object
 +
-direction
+Direction
 +
-proximity
+Proximity
 +
-motion
+Movement
 +
-path relationship
+Path relationship
 ```
 
 Example:
 
 ```text
-Person + far + left + stationary
+Person
+far
+left
+stationary
 → LOW
 
-Chair + center + near + approaching
+Chair
+center
+near
+approaching
 → HIGH
 
-Obstacle + center + critical
+Obstacle
+center
+critical
 → CRITICAL
 ```
 
-Safety decisions are deterministic.
+Safety logic should remain deterministic.
 
 ---
 
-# 15. Priority Engine
+# Priority Engine
 
-Not every observation should be spoken.
+Not every observation should become speech.
 
-Example environment:
+Suppose AVA sees:
 
 ```text
 Person
@@ -645,27 +626,21 @@ Exit
 Plant
 ```
 
-A naïve assistant:
+A naïve assistant might announce everything.
 
-> “Person. Chair. Door. Bottle. Table. Exit. Plant.”
-
-AVA:
-
-> **silence**
-
-until something meaningful happens.
+AVA should remain silent unless information is useful or important.
 
 Example:
 
 ```text
 Chair enters path
-        ↓
-PRIORITY ↑
-        ↓
+       ↓
+Priority increases
+       ↓
 “Caution. Obstacle ahead.”
 ```
 
-Suggested priority structure:
+A practical priority structure:
 
 ```text
 100 → Emergency
@@ -677,17 +652,17 @@ Suggested priority structure:
  30 → General information
 ```
 
-### Principle
+The principle is:
 
 > **Silence is also a decision.**
 
 ---
 
-# 16. Response Manager
+# Response Manager
 
-Only one system component should control speech.
+Only one component should control the outgoing speech channel.
 
-Every other module submits a response request.
+All engines submit response requests to the Response Manager.
 
 ```text
 EVENT / QUERY
@@ -707,11 +682,11 @@ DROP
 
 Example:
 
-Current:
+AVA is speaking:
 
 > “You are in a corridor…”
 
-New event:
+A new critical event occurs:
 
 ```text
 Obstacle detected
@@ -732,15 +707,15 @@ This prevents speech overlap and information overload.
 
 ---
 
-# 17. Voice Input / STT Engine
+# STT / Intent Engine
 
-The user can provide commands verbally.
+The user can communicate with AVA through voice.
 
 ```text
 Speech
- ↓
+  ↓
 STT
- ↓
+  ↓
 Intent
 ```
 
@@ -756,7 +731,7 @@ HELP
 STOP
 ```
 
-Examples:
+Example:
 
 ```text
 “Where is the door?”
@@ -778,38 +753,42 @@ Examples:
 → STOP
 ```
 
-For the local STT layer, faster-whisper is the current implementation candidate.
-
 ---
 
-# 18. OCR Engine
+# OCR Engine
 
-OCR is **on demand**, not continuously active.
+OCR is activated when useful rather than continuously.
 
 ```text
 User:
 “Read this.”
+
       ↓
+
 Capture current/best frame
+
       ↓
+
 OCR
+
       ↓
+
 Confidence / cleanup
+
       ↓
+
 TTS
 ```
 
-This avoids wasting computation performing OCR on every camera frame.
-
-PaddleOCR is the current candidate for local OCR.
+This keeps the continuous perception pipeline lightweight.
 
 ---
 
-# 19. Context Engine
+# Context Engine
 
-The Context Engine turns structured facts into useful descriptions.
+The Context Engine converts verified structured facts into useful descriptions.
 
-Input:
+Example input:
 
 ```text
 person = center
@@ -818,21 +797,19 @@ chair = left
 path = clear
 ```
 
-Output:
+Possible output:
 
 > “You are in a corridor. The path ahead is clear. There is a door on your right.”
 
-This can work through deterministic templates.
+This can be implemented using deterministic templates.
 
-That gives us a fallback even if the LLM is unavailable.
+That gives AVA a reliable fallback without requiring an LLM.
 
 ---
 
-# 20. LangGraph
+# LangGraph
 
-LangGraph is **not** the perception engine.
-
-It is used for higher-level workflow orchestration.
+LangGraph is used for **workflow orchestration**, not high-frequency perception.
 
 Example:
 
@@ -849,86 +826,58 @@ LANGGRAPH
     └── HELP   → Help
 ```
 
-### Important
+Important rule:
 
-Do not invoke LangGraph:
+> **Do not invoke LangGraph for every camera frame.**
 
-```text
-10–15 times per second
-```
-
-for camera perception.
-
-Instead:
-
-```text
-continuous perception
-        ↓
-meaningful event/query
-        ↓
-LangGraph
-```
-
-This keeps the real-time path lightweight.
+It should activate around meaningful events and higher-level user queries.
 
 ---
 
-# 21. Ollama
+# Ollama
 
 Ollama is an **optional natural-language layer**.
 
 ### Good uses
 
-* scene descriptions
-* conversational answers
-* natural-language synthesis
-* contextual explanation
+* Scene descriptions
+* Conversational responses
+* Natural-language synthesis
+* Contextual explanations
 
 ### Bad uses
 
-* collision decisions
-* emergency decisions
-* safety severity
-* object detection
-* exact spatial decisions
+* Collision decisions
+* Emergency decisions
+* Safety severity
+* Object detection
+* Exact direction decisions
 
-Correct:
+Correct architecture:
 
 ```text
 Verified World State
-        ↓
+       ↓
+Structured Facts
+       ↓
 Ollama
-        ↓
-Natural-language response
-        ↓
-Validator
-        ↓
+       ↓
+Response Validator
+       ↓
 TTS
 ```
 
-Incorrect:
-
-```text
-Camera
- ↓
-YOLO
- ↓
-Ollama
- ↓
-“Is this dangerous?”
-```
-
-### Hard rule
+Hard rule:
 
 > **The LLM never becomes the safety authority.**
 
 ---
 
-# 22. Fast Path vs Rich Path
+# Fast Path vs Rich Path
 
-AVA has two conceptual paths.
+AVA effectively contains two different computational paths.
 
-## FAST PATH
+## Fast Path
 
 ```text
 Camera
@@ -946,23 +895,22 @@ Priority
 Cached TTS
 ```
 
-Characteristics:
-
-* local
-* deterministic
-* low-latency
-* safety-critical
-
 Used for:
 
-* obstacle alerts
-* collision warnings
-* emergency events
-* path changes
+* Obstacles
+* Collision warnings
+* Emergency events
+* Immediate path changes
+
+Characteristics:
+
+**Local**
+**Deterministic**
+**Fast**
 
 ---
 
-## RICH PATH
+## Rich Path
 
 ```text
 World State
@@ -978,45 +926,83 @@ Natural Language
 TTS
 ```
 
-Characteristics:
-
-* contextual
-* conversational
-* optional
-* slower
-
 Used for:
 
-* scene description
-* natural-language answers
-* contextual queries
+* Scene descriptions
+* Conversational questions
+* Contextual explanations
+
+Characteristics:
+
+**Contextual**
+**Conversational**
+**Optional**
 
 ---
 
-# 23. TTS Engine
+# Critical Safety Principle
 
-TTS is more than:
+The most important architectural rule is:
 
 ```text
-text → audio
+The LLM never sits between perception
+and a critical safety alert.
 ```
 
-AVA has to decide:
+Correct:
 
 ```text
-what
-when
-priority
-interrupt?
-queue?
-drop?
-language?
+YOLO
+ ↓
+Spatial
+ ↓
+Safety Rules
+ ↓
+Priority
+ ↓
+Cached TTS
+```
+
+Incorrect:
+
+```text
+YOLO
+ ↓
+Ollama
+ ↓
+“Is this dangerous?”
+ ↓
+TTS
+```
+
+The deterministic safety path must remain operational independently.
+
+---
+
+# TTS Architecture
+
+Speech is not merely:
+
+```text
+Text → Audio
+```
+
+AVA must first decide:
+
+```text
+What?
+When?
+Priority?
+Interrupt?
+Queue?
+Drop?
+Language?
 ```
 
 Then:
 
 ```text
-Approved response
+Approved Response
       ↓
 Language Router
       ↓
@@ -1029,35 +1015,17 @@ Speaker / Headphones
 
 ---
 
-# 24. Local-Language TTS Strategy
+# Local-Language TTS
 
-The system should support a **locally executed multilingual TTS path**.
+AVA should use a local multilingual TTS path where practical.
 
-Primary experimental candidate:
+For Indian-language output, the primary experimental choice is:
 
 **AI4Bharat Indic Parler-TTS**
 
-For hackathon safety and latency:
+Critical messages can be pre-generated and cached.
 
-```text
-Critical message
-      ↓
-Pre-generated / cached audio
-      ↓
-Immediate playback
-```
-
-Dynamic message:
-
-```text
-Text
- ↓
-Local TTS
- ↓
-Audio
-```
-
-Critical phrases to pre-cache:
+Example:
 
 ```text
 “Stop. Obstacle ahead.”
@@ -1067,176 +1035,111 @@ Critical phrases to pre-cache:
 “Path clear.”
 
 “Emergency exit ahead.”
-
-“Please wait.”
 ```
 
-### Hackathon recommendation
-
-Select the exact language for the live demo in advance and benchmark it on the actual machine.
-
-Do not rely on automatic language switching for the critical demonstration path.
-
----
-
-# 25. Continuous Runtime
-
-A practical runtime configuration is:
+Then:
 
 ```text
-CAMERA
-24–30 FPS
-
-YOLO + TRACKER
-~8–15 FPS target
-
-SAFETY / EVENTS
-~2–5 Hz target
-
-OCR
-ON DEMAND
-
-STT
-WHILE LISTENING
-
-OLLAMA
-ON DEMAND
-
-TTS
-EVENT / QUERY DRIVEN
+Critical Event
+      ↓
+Cached Audio
+      ↓
+Immediate Playback
 ```
 
-This means:
+Dynamic responses can use local TTS generation.
 
-> **The system continuously observes, but doesn't continuously execute every expensive operation.**
+The live demonstration should use a **preselected and tested language** rather than depending on automatic language switching for safety-critical speech.
 
 ---
 
-# 26. Complete Example — Obstacle
+# End-to-End Example: Obstacle
 
-Let's walk through a complete real execution.
+Imagine the user is walking.
 
-### Frame 1
+### Camera
 
-YOLO:
+```text
+Continuous frames
+```
+
+### YOLO
 
 ```text
 chair
+door
+person
 ```
 
-Spatial:
+### Tracker
 
 ```text
-left
-far
+Chair #17
 ```
 
-World State:
+### Spatial Engine
 
 ```text
-chair #17
-left
-far
-stationary
+chair = center
 ```
 
-No speech.
-
----
-
-### Frame 20
+### World State
 
 ```text
-chair #17
+chair
 center
 medium
 ```
 
-Change:
+### Later
 
 ```text
-LEFT → CENTER
-FAR → MEDIUM
+medium
+ ↓
+near
+ ↓
+approaching
 ```
 
-Potential event:
+### Change Engine
 
 ```text
 OBSTACLE_APPROACHING
 ```
 
-Safety:
+### Safety Engine
 
 ```text
-HIGH
+path overlap = YES
+proximity = NEAR
+approaching = YES
 ```
 
-Priority:
+### Priority
 
 ```text
 95
 ```
 
-Response:
-
-> **“Caution. Obstacle ahead.”**
-
----
-
-### Frame 30
-
-```text
-chair #17
-center
-near
-approaching
-```
-
-Priority increases.
-
-Response Manager:
+### Response Manager
 
 ```text
 INTERRUPT
 ```
 
-TTS:
+### TTS
 
-> **“Stop. Obstacle directly ahead.”**
+> **“Stop. Obstacle ahead.”**
 
----
-
-### Frame 40
-
-User moves away.
-
-```text
-chair
-medium
-left
-```
-
-World State:
-
-```text
-path = clear
-```
-
-Optional:
-
-> **“Path clear.”**
-
-Then silence.
+That entire chain is AVA.
 
 ---
 
-# 27. Complete Example — Door Query
+# End-to-End Example: Door
 
 User:
 
 > “Where is the door?”
-
-Pipeline:
 
 ```text
 VOICE
@@ -1264,13 +1167,11 @@ No LLM required.
 
 ---
 
-# 28. Complete Example — Read Sign
+# End-to-End Example: Read Sign
 
 User:
 
 > “Read this sign.”
-
-Pipeline:
 
 ```text
 VOICE
@@ -1279,11 +1180,11 @@ STT
  ↓
 READ
  ↓
-capture frame
+CURRENT FRAME
  ↓
 OCR
  ↓
-text
+TEXT
  ↓
 TTS
 ```
@@ -1294,13 +1195,11 @@ Output:
 
 ---
 
-# 29. Complete Example — Scene Description
+# End-to-End Example: Scene Description
 
 User:
 
 > “Describe my surroundings.”
-
-Pipeline:
 
 ```text
 VOICE
@@ -1311,13 +1210,13 @@ SCENE
  ↓
 WORLD STATE
  ↓
-Context Engine
+CONTEXT ENGINE
  ↓
-optional LangGraph
+OPTIONAL LANGGRAPH
  ↓
-optional Ollama
+OPTIONAL OLLAMA
  ↓
-Validator
+VALIDATOR
  ↓
 TTS
 ```
@@ -1328,46 +1227,49 @@ Output:
 
 ---
 
-# 30. Emergency Path
+# Accessibility Architecture
 
-Emergency events get the highest priority.
+AVA's screen is not the primary source of information.
+
+The intended interaction is:
 
 ```text
-Emergency event
-      ↓
-Priority = 100
-      ↓
-Interrupt current audio
-      ↓
-Cached / validated phrase
-      ↓
-TTS
+Voice-first
+      +
+Audio-first
+      +
+Screen-reader compatible
+      +
+Large controls
+      +
+Minimal visual dependency
 ```
 
-The emergency path should **not** wait for:
+Core commands should work without requiring the user to continuously inspect the interface.
 
-* Ollama
-* internet
-* cloud APIs
-* complex reasoning
+Suggested controls:
+
+```text
+[SCAN]
+[READ]
+[REPEAT]
+[STOP]
+[SOS]
+```
+
+The corresponding voice commands provide the same operations.
 
 ---
 
-# 31. Frontend Architecture
+# Frontend
 
-Recommended stack:
+Recommended:
 
 ```text
 React + Vite
-       ↓
-Camera / Microphone
-       ↓
-FastAPI backend
-       ↓
-WebSocket / REST
 ```
 
-Suggested interface:
+Interface:
 
 ```text
 ┌─────────────────────────┐
@@ -1379,30 +1281,38 @@ Suggested interface:
 ├─────────────────────────┤
 │ 🔊 “Obstacle ahead.”    │
 ├─────────────────────────┤
-│      🎙 ASK AVA         │
+│       🎙 ASK AVA        │
 │                         │
 │ [SCAN]    [READ]        │
 │                         │
-│         [SOS]           │
+│          [SOS]          │
 └─────────────────────────┘
 ```
 
-The interface should have:
+---
 
-* large touch targets
-* high contrast
-* semantic screen-reader labels
-* minimal visual clutter
-* keyboard accessibility
-* voice-first operation
+# Backend
 
-The user should not have to constantly inspect the screen.
+Recommended:
+
+```text
+Python + FastAPI
+```
+
+Responsibilities:
+
+* API handling
+* model orchestration
+* World State
+* events
+* safety
+* response management
+* TTS
+* optional LLM workflow
 
 ---
 
-# 32. Backend Structure
-
-Recommended repository:
+# Repository Structure
 
 ```text
 ava/
@@ -1447,16 +1357,14 @@ ava/
 └── README.md
 ```
 
-The current development plan follows essentially this modular separation. 
-
 ---
 
-# 33. Internal Data Contracts
+# Internal Data Flow
 
 ## Detection
 
 ```python
-DetectionResult = {
+{
     "track_id": 17,
     "label": "chair",
     "confidence": 0.91,
@@ -1468,7 +1376,7 @@ DetectionResult = {
 ## Spatial Object
 
 ```python
-SpatialObject = {
+{
     "track_id": 17,
     "label": "chair",
     "direction": "center",
@@ -1480,7 +1388,7 @@ SpatialObject = {
 ## Event
 
 ```python
-Event = {
+{
     "type": "OBSTACLE_APPROACHING",
     "priority": 95,
     "object_id": 17,
@@ -1492,7 +1400,7 @@ Event = {
 ## Speech Job
 
 ```python
-SpeechJob = {
+{
     "text": "Stop. Obstacle ahead.",
     "priority": 95,
     "interrupt": True,
@@ -1503,9 +1411,9 @@ SpeechJob = {
 
 ---
 
-# 34. API
+# API
 
-Minimal initial API:
+Initial endpoints:
 
 ```text
 POST /vision/detect
@@ -1535,502 +1443,187 @@ Emergency flow.
 WS /events
 ```
 
-Live state/events if WebSocket mode is stable.
+Optional real-time events once the core system is stable.
 
 Start simple:
 
 ```text
 REST first
-↓
-WebSocket after core works
+ ↓
+WebSocket later
 ```
 
-This minimizes integration risk.
+---
+
+# Technology Stack
+
+| Layer            | Technology                        |
+| ---------------- | --------------------------------- |
+| Frontend         | React + Vite                      |
+| Backend          | Python + FastAPI                  |
+| Camera           | OpenCV / browser camera           |
+| Object Detection | YOLO                              |
+| Tracking         | ByteTrack initially               |
+| Spatial          | Python + OpenCV / NumPy           |
+| World State      | Python + Pydantic                 |
+| Event Engine     | Python                            |
+| Safety           | Deterministic rules               |
+| OCR              | PaddleOCR                         |
+| STT              | faster-whisper                    |
+| Workflow         | LangGraph                         |
+| LLM              | Ollama, optional                  |
+| TTS              | Indic Parler-TTS + cached phrases |
+| Transport        | REST → WebSocket if stable        |
+| Version Control  | Git + GitHub                      |
 
 ---
 
-# 35. Technology Stack
+# Development Sequence
 
-| Layer             | Technology                        |
-| ----------------- | --------------------------------- |
-| Frontend          | React + Vite                      |
-| Backend           | Python + FastAPI                  |
-| Camera            | OpenCV / browser camera           |
-| Object detection  | Ultralytics YOLO                  |
-| Tracking          | ByteTrack initially               |
-| Spatial reasoning | Python + OpenCV / NumPy           |
-| World State       | Python + Pydantic                 |
-| Event engine      | Python                            |
-| Safety            | Deterministic rules               |
-| OCR               | PaddleOCR                         |
-| STT               | faster-whisper                    |
-| Workflow          | LangGraph                         |
-| LLM               | Ollama, optional                  |
-| TTS               | Indic Parler-TTS + cached phrases |
-| Communication     | REST → WebSocket if stable        |
-| Version control   | Git + GitHub                      |
-
----
-
-# 36. 20-Hour Build Plan
-
-## Hour 0–1 — Foundation
-
-Build:
+The implementation should follow dependencies rather than trying to develop all engines simultaneously.
 
 ```text
-Repo
-FastAPI
-React
+Foundation
+    ↓
 Camera
-Basic API
-```
-
-### Exit condition
-
-Everyone can run the project.
-
----
-
-## Hour 1–3 — Vision
-
-Build:
-
-```text
-Camera
- ↓
+    ↓
 YOLO
- ↓
-detections
-```
-
-### Exit condition
-
-Live detections work.
-
----
-
-## Hour 3–5 — Tracking + Spatial
-
-Build:
-
-```text
-YOLO
- ↓
+    ↓
 Tracking
- ↓
-Direction
- ↓
-Relative proximity
-```
-
-### Exit condition
-
-Stable object state.
-
----
-
-## Hour 5–7 — World State + Safety
-
-Build:
-
-```text
-Spatial data
- ↓
+    ↓
+Spatial
+    ↓
 World State
- ↓
-Change detection
- ↓
-Safety events
-```
-
-### Exit condition
-
-Obstacle can enter the path and produce a state transition.
-
----
-
-## Hour 7–9 — Response + TTS
-
-Build:
-
-```text
-Event
- ↓
+    ↓
+Change / Events
+    ↓
+Safety
+    ↓
 Priority
- ↓
+    ↓
 Response Manager
- ↓
+    ↓
 TTS
-```
-
-### Exit condition
-
-No speech spam.
-
-Critical alerts can interrupt.
-
----
-
-## Hour 9–11 — OCR
-
-Build:
-
-```text
-READ
- ↓
+    ↓
 OCR
- ↓
-TTS
-```
-
-### Exit condition
-
-Demo sign works.
-
----
-
-## Hour 11–13 — STT + Intent
-
-Build:
-
-```text
-VOICE
- ↓
+    ↓
 STT
- ↓
+    ↓
 Intent
-```
-
-### Exit condition
-
-Core voice commands work.
-
----
-
-## Hour 13–15 — Context
-
-Build:
-
-```text
-World State
- ↓
+    ↓
 Context
- ↓
-Scene response
-```
-
-### Exit condition
-
-Scene query produces a useful answer.
-
----
-
-## Hour 15–16 — Ollama
-
-Only if the system is already stable.
-
-Build:
-
-```text
-World State
- ↓
+    ↓
+LangGraph
+    ↓
 Ollama
- ↓
-Natural-language description
+    ↓
+Accessibility
+    ↓
+Fallbacks
+    ↓
+Testing
 ```
 
-### Exit condition
+The core rule is:
 
-Optional rich mode works.
-
-If unstable:
-
-> **Disable it.**
+> **Build the deterministic pipeline first. Add intelligence only after the core loop works.**
 
 ---
 
-## Hour 16–17.5 — Emergency + Accessibility
+# Core MVP
 
-Implement:
-
-* SOS
-* emergency priority
-* screen-reader labels
-* large controls
-* voice-first interaction
-
----
-
-## Hour 17.5–18.5 — Fallback Mode
-
-Prepare:
+The system is complete enough for demonstration when it can:
 
 ```text
-Ollama fallback
-TTS cache
-Prepared images
-Prepared signs
-REST fallback
+1. Start the camera.
+2. Detect objects.
+3. Track objects.
+4. Determine direction.
+5. Estimate relative proximity.
+6. Maintain World State.
+7. Detect meaningful changes.
+8. Identify obstacles.
+9. Prioritize alerts.
+10. Prevent repeated speech.
+11. Interrupt speech for critical hazards.
+12. Answer “Where is the door?”
+13. Read a sign.
+14. Accept core voice commands.
+15. Describe the environment.
+16. Speak through local TTS.
+17. Operate through an accessibility-first interface.
+18. Continue basic operation without Ollama or internet.
 ```
 
 ---
 
-## Hour 18.5–20 — Demo + Pitch
-
-No new functionality.
-
-Test.
-
-Rehearse.
-
-Freeze.
-
----
-
-# 37. Team Responsibilities
-
-## Vision Engineer
-
-Own:
-
-* YOLO
-* Tracking
-* Spatial
-* World State ingestion
-
-## Backend / AI Engineer
-
-Own:
-
-* FastAPI
-* Event engine
-* Safety
-* LangGraph
-* Ollama
-
-## Frontend Engineer
-
-Own:
-
-* React
-* Camera interface
-* accessibility
-* controls
-
-## Voice / Integration Engineer
-
-Own:
-
-* STT
-* TTS
-* Response Manager
-* audio queue
-* end-to-end integration
-
-The existing plan uses essentially the same role split. 
-
----
-
-# 38. Testing Strategy
-
-## Core safety
-
-```text
-Chair enters center
-→ obstacle warning
-
-Chair stays
-→ no repeated warning
-
-Chair approaches
-→ warning escalates
-
-Chair leaves
-→ path clear
-```
-
-## Voice
-
-```text
-Where is the door?
-→ right
-
-Is the path clear?
-→ safety response
-
-Read this
-→ OCR
-
-Describe surroundings
-→ scene response
-
-Repeat
-→ repeat last response
-
-Stop
-→ stop audio
-```
-
-## Failure
-
-```text
-Ollama OFF
-→ core works
-
-Internet OFF
-→ local system works
-
-TTS delay
-→ cached alert
-
-OCR failure
-→ focused scan
-
-YOLO slowdown
-→ reduce resolution/FPS
-```
-
-The current source plan defines these same core test and fallback expectations. 
-
----
-
-# 39. Failure / Fallback Architecture
+# Failure Strategy
 
 AVA should degrade gracefully.
 
-| Failure              | Fallback                  |
-| -------------------- | ------------------------- |
-| Ollama unavailable   | Deterministic templates   |
-| Internet unavailable | Local pipeline            |
-| YOLO slow            | Lower resolution/FPS      |
-| Tracker unstable     | Simpler tracking/cooldown |
-| OCR unreliable       | Focused scan              |
-| TTS slow             | Cached phrases            |
-| TTS overlap          | Response Manager          |
-| Camera failure       | Prepared demo input       |
-| WebSocket failure    | REST/snapshot mode        |
+| Failure               | Fallback                               |
+| --------------------- | -------------------------------------- |
+| Ollama unavailable    | Deterministic templates                |
+| Internet unavailable  | Local pipeline                         |
+| YOLO too slow         | Smaller model / lower resolution / FPS |
+| Tracker unstable      | Simpler tracking + cooldown            |
+| OCR unreliable        | Focused scan                           |
+| TTS slow              | Cached safety phrases                  |
+| TTS overlap           | Response Manager                       |
+| False detection       | Confidence + tracking + cooldown       |
+| Camera failure        | Prepared input through same pipeline   |
+| WebSocket instability | REST/snapshot mode                     |
 
-The key rule:
+The rule is:
 
-> **Optional components may fail. The safety loop must remain.**
-
----
-
-# 40. Performance Strategy
-
-The system is designed around different computational frequencies.
-
-```text
-CAMERA
-24–30 FPS
-      ↓
-YOLO
-~8–15 FPS
-      ↓
-WORLD STATE
-      ↓
-SAFETY
-~2–5 Hz
-```
-
-Meanwhile:
-
-```text
-OCR       → on demand
-STT       → listening
-Ollama    → on demand
-TTS       → event/query driven
-```
-
-This avoids wasting resources and reduces latency.
+> **Optional components may fail. The core safety loop must remain.**
 
 ---
 
-# 41. Latency Philosophy
+# Safety Boundaries
 
-The safety path should target a response that feels immediate.
+AVA is an assistive prototype.
 
-Conceptually:
+It is **not** a replacement for:
 
-```text
-Frame
- ↓
-YOLO
- ↓
-Spatial
- ↓
-Safety
- ↓
-Priority
- ↓
-Cached TTS
-```
-
-No:
-
-```text
-LLM
-translation
-cloud API
-database
-```
-
-between detection and a critical safety alert.
-
-Exact latency must be benchmarked on the actual hackathon machine.
-
-Track:
-
-```text
-inference_time
-fps
-dropped_frames
-event_time
-tts_start_time
-end_to_end_latency
-```
-
----
-
-# 42. Privacy
-
-Local-first design also reduces unnecessary exposure of camera data.
-
-Principles:
-
-* process locally where practical
-* don't store raw video unnecessarily
-* retain compact state instead of video history
-* don't add facial recognition
-* don't collect personal data unnecessarily
-
----
-
-# 43. Safety Boundaries
-
-AVA is an **assistive prototype**, not a certified mobility device.
+* a mobility cane
+* a guide dog
+* trained assistance
+* emergency services
 
 Do not claim:
 
-* perfect detection
+* perfect object detection
 * exact distance without calibration
 * guaranteed collision avoidance
-* replacement for a cane
-* replacement for a guide dog
-* replacement for emergency services
+* perfect language recognition
+* production-grade safety certification
 
-Safety language should be conservative when confidence is low.
+Use conservative language when confidence is low.
 
 ---
 
-# 44. Demo Scenario
+# Privacy
 
-The best demonstration is one continuous environment.
+The local-first architecture also reduces unnecessary handling of camera data.
 
-### Stage 1
+Principles:
 
-AVA sees:
+* Process locally where practical.
+* Do not unnecessarily store raw video.
+* Retain compact environmental state instead of video history.
+* Avoid unnecessary personal data collection.
+* Do not add facial recognition to the MVP.
+
+---
+
+# Best Demo
+
+Use one continuous physical environment.
+
+### Phase 1 — Observe
+
+AVA detects:
 
 ```text
 Person
@@ -2039,83 +1632,49 @@ Door
 Table
 ```
 
-AVA remains mostly silent.
+but does not narrate everything.
 
-### Stage 2
+### Phase 2 — Threat emerges
 
 Chair enters path.
 
 > **“Caution. Obstacle ahead.”**
 
-### Stage 3
+### Phase 3 — Threat escalates
 
 Chair becomes closer.
 
 > **“Stop. Obstacle directly ahead.”**
 
-### Stage 4
-
-User asks:
+### Phase 4 — User asks
 
 > “Where is the door?”
 
 > **“The door is on your right.”**
 
-### Stage 5
-
-User asks:
+### Phase 5 — Read
 
 > “Read this sign.”
 
 > **“Emergency Exit.”**
 
-### Stage 6
-
-User asks:
+### Phase 6 — Understand
 
 > “Describe my surroundings.”
 
-Rich contextual response.
+AVA generates a concise contextual description.
 
-### Stage 7
+### Phase 7 — Local language
 
-Switch language.
+Switch the selected language and demonstrate a cached critical alert.
 
-Demonstrate a cached local-language safety phrase.
-
-This shows the entire architecture in one story.
+This single demonstration exercises almost the entire architecture.
 
 ---
 
-# 45. Why This Is Different
+# The Core Mental Model
 
-The strongest competitor answer is not:
-
-> “We use better YOLO.”
-
-It is:
-
-> **“We don't compete on general visual perception. We use proven perception tools and build the missing decision layer around them.”**
-
-The fundamental contrast:
-
-```text
-GENERAL VISION
-“What do you see?”
-
-AVA
-“What changed?
-Where is it relative to me?
-Does it matter?
-Should I hear it now?
-What should I do?”
-```
-
----
-
-# 46. Final Mental Model
-
-Remember AVA as:
+Remember every engine like this:
 
 ```text
 YOLO
@@ -2124,7 +1683,7 @@ YOLO
 TRACKER
 → connects time
 
-SPATIAL
+SPATIAL ENGINE
 → gives perspective
 
 WORLD STATE
@@ -2133,10 +1692,10 @@ WORLD STATE
 CHANGE ENGINE
 → notices what changed
 
-SAFETY
+SAFETY ENGINE
 → evaluates risk
 
-PRIORITY
+PRIORITY ENGINE
 → decides importance
 
 STT
@@ -2152,7 +1711,7 @@ OLLAMA
 → provides optional natural language
 
 RESPONSE MANAGER
-→ controls the conversation
+→ controls the speech channel
 
 TTS
 → gives AVA a voice
@@ -2172,13 +1731,13 @@ DECIDE
 SPEAK
 ```
 
-# 47. Final Principle
+# Final Principle
 
 > ## **Perception is not the product.**
 >
 > ## **The decision loop is the product.**
 
-AVA continuously observes the environment, maintains only the context it needs, reacts to meaningful change, prioritizes safety and relevance, understands user intent, and communicates through an accessible voice-first interface.
+AVA continuously observes the environment, retains only the context it needs, understands change over time, evaluates safety and relevance, interprets user intent, and communicates the right information through an accessible voice-first interface.
 
 > **Others tell you what the camera sees.**
 >
