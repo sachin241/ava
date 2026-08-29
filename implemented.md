@@ -65,12 +65,15 @@
 - Real mobile/browser camera, OCR, and speech hardware behavior remains unverified in this environment.
 - Optional automatic SOS escalation is implemented for repeated high-confidence critical OCR/symbol signs (`FIRE_HAZARD`, `ELECTRICAL_HAZARD`, `OPENING_HOLE`, `EVACUATION`, `FIRE`). Enable with `AUTO_SOS_ON_CRITICAL_SIGN=true`; default is disabled. Evidence must meet the confidence threshold on consecutive reads and uses the existing local priority-100 Response Manager flow.
 - Passive scan narration is now gated by meaningful world-state changes instead of speaking every live frame. Explicit scan requests can still produce a summary, but the monitoring loop itself no longer narrates unchanged scenes.
+- Guide-style speech pass: safety, path, locate, scan, help, and scene responses now use shorter companion-style wording. Deterministic scene summaries filter far background inventory and prioritize nearby/path-relevant objects, people, doors, stairs, signs, and hazards instead of listing every detection. Semantic danger signs now receive specific spoken phrases rather than generic obstacle wording.
 
 ## Hands-free startup and voice control status
 
 - Microphone startup: implemented; the ENABLE AVA VOICE gesture requests permission explicitly and handles denial/unavailability.
 - STT startup: implemented status reporting through health; local Vosk remains preferred when configured, with browser SpeechRecognition fallback detection.
 - Hands-free voice control: implemented browser short-session recognition loop with pause-during-command processing and automatic return to listening.
+- Mobile permission startup: camera and microphone prompts now start from explicit taps on mobile instead of page load, and insecure phone URLs show a direct HTTPS requirement.
+- Voice-control startup fix: `ENABLE AVA VOICE` now starts browser recognition directly instead of calling the missing `maybeStart` helper.
 - Assistant state synchronization: controller states include IDLE, LISTENING, PROCESSING, MONITORING, SPEAKING, PAUSED, EMERGENCY, and ERROR; browser reflects voice-control/listening/speaking status.
 - Voice command execution: implemented through the existing intent router, AssistantController, and ResponseManager; added text-command API for browser recognition.
 - TTS/listening loop: implemented with speech cancellation and delayed listening restart to avoid capturing AVA speech.

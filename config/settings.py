@@ -2,13 +2,27 @@
 from __future__ import annotations
 
 import os
+from importlib.util import find_spec
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def package_available(module_path: str) -> bool:
+    try:
+        return find_spec(module_path) is not None
+    except ModuleNotFoundError:
+        return False
+
+
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "ava-development-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "127.0.0.1,localhost,192.168.137.1,192.168.1.1,studio-greedless-late.ngrok-free.dev,.ngrok-free.app"
+).split(",") if host.strip()]
+if render_hostname := os.getenv("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(render_hostname)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -31,6 +45,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+HAS_WHITENOISE = package_available("whitenoise.middleware")
+if HAS_WHITENOISE:
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{
@@ -47,15 +64,36 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+if database_url := os.getenv("DATABASE_URL"):
+    try:
+        import dj_database_url
+    except ImportError as error:
+        raise RuntimeError("DATABASE_URL requires dj-database-url to be installed.") from error
+    DATABASES["default"] = dj_database_url.parse(database_url, conn_max_age=600, ssl_require=True)
 AUTH_PASSWORD_VALIDATORS: list[dict[str, str]] = []
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # ``demo`` is intentionally served as static, read-only input.  It is never an
 # upload destination and its frames follow the normal detection/OCR requests.
 STATICFILES_DIRS = [BASE_DIR / "static", BASE_DIR / "demo"]
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+if HAS_WHITENOISE:
+    STORAGES["staticfiles"] = {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "https://*.ngrok-free.app").split(",")
+    if origin.strip()
+]
+if render_hostname:
+    CSRF_TRUSTED_ORIGINS.append(f"https://{render_hostname}")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 YOLO_MODEL = os.getenv("YOLO_MODEL", "yolo11n.pt")

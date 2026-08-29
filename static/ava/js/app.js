@@ -32,6 +32,9 @@
   const hasCameraSwitchButton = Boolean(cameraSwitchButton);
   const hasDemoButton = Boolean(demoButton);
   const hasSpeechLanguage = Boolean(speechLanguage);
+  const isSecureMediaContext = () => Boolean(window.isSecureContext || ["localhost", "127.0.0.1"].includes(location.hostname));
+  const isLikelyMobile = () => Boolean(window.matchMedia?.("(pointer: coarse)")?.matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
+  const secureOriginMessage = "Camera and microphone require HTTPS on a phone. Use https:// for the computer's LAN address, or open AVA on the phone's own localhost.";
 
   async function handleHandsFreeCommand(transcript) {
     if (voiceControlStatus) voiceControlStatus.textContent = "Processing.";
@@ -51,12 +54,12 @@
   async function enableVoiceControl() {
     try {
       if (!window.AvaVoice) throw new Error("Voice capture is unavailable in this page.");
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      mic.getTracks().forEach((track) => track.stop());
+      if (!isSecureMediaContext()) throw new Error(secureOriginMessage);
       if (!window.AvaSpeech.supported()) throw new Error("Browser audio/TTS is unavailable.");
       if (!window.AvaVoice.supportsHandsFree()) throw new Error("Speech recognition is unavailable. Use ASK AVA.");
       window.AvaVoice.enable(handleHandsFreeCommand);
       if (voiceControlStatus) voiceControlStatus.textContent = "Active.";
+      if (microphoneStatus) microphoneStatus.textContent = "Ready for browser voice control.";
       if (sttStatus) sttStatus.textContent = "Ready (browser recognition).";
       if (voiceControlButton) { voiceControlButton.textContent = "VOICE CONTROL: ON"; voiceControlButton.setAttribute("aria-pressed", "true"); }
     } catch (error) {
@@ -168,12 +171,17 @@
   }
 
   async function checkMicrophone() {
+    if (!microphoneStatus) return;
+    if (!isSecureMediaContext()) { microphoneStatus.textContent = "Needs HTTPS on mobile."; return; }
     if (!navigator.mediaDevices?.getUserMedia) { microphoneStatus.textContent = "Not supported by this browser."; return; }
+    if (!navigator.permissions?.query) { microphoneStatus.textContent = "Tap ASK AVA or ENABLE AVA VOICE to allow."; return; }
     try {
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      mic.getTracks().forEach((track) => track.stop());
-      microphoneStatus.textContent = "Ready (permission granted).";
-    } catch (_) { microphoneStatus.textContent = "Unavailable or permission not granted."; }
+      const permission = await navigator.permissions.query({ name: "microphone" });
+      microphoneStatus.textContent = permission.state === "granted" ? "Ready (permission granted)." : "Tap ASK AVA or ENABLE AVA VOICE to allow.";
+      permission.onchange = () => { microphoneStatus.textContent = permission.state === "granted" ? "Ready (permission granted)." : "Tap ASK AVA or ENABLE AVA VOICE to allow."; };
+    } catch (_) {
+      microphoneStatus.textContent = "Tap ASK AVA or ENABLE AVA VOICE to allow.";
+    }
   }
 
   function setCameraSwitchLabel(facing) {
@@ -206,13 +214,18 @@
   }
 
   async function initialise() {
-    if (!window.isSecureContext && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-      await useDemo("Camera and microphone access require a secure origin. Open AVA through localhost or HTTPS, then reconnect the camera.");
+    if (!isSecureMediaContext()) {
+      await useDemo(`${secureOriginMessage} Prepared demo ready.`);
       checkMicrophone();
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       await useDemo("Camera access is not supported by this browser. Prepared demo ready.");
+      checkMicrophone();
+      return;
+    }
+    if (isLikelyMobile()) {
+      cameraStatus.textContent = "Tap CONNECT CAMERA to allow the mobile camera.";
       checkMicrophone();
       return;
     }
@@ -246,6 +259,7 @@
   askButton.addEventListener("click", async () => {
     try {
       if (!window.AvaVoice) throw new Error("Voice capture is unavailable in this page.");
+      if (!isSecureMediaContext()) throw new Error(secureOriginMessage);
       if (!window.AvaVoice.active()) {
         await window.AvaVoice.start(); askButton.textContent = "SEND COMMAND"; askButton.setAttribute("aria-pressed", "true"); return;
       }

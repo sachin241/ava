@@ -61,7 +61,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Open `http://127.0.0.1:8000/`, grant permissions, and choose **START SCAN**. On a phone, camera and microphone permissions require HTTPS (or the phone's own localhost); do not open the development server through a plain `http://` LAN address. Use **SWITCH TO FRONT/BACK** to change camera and **USE DEMO** if hardware access is unavailable. Ultralytics downloads `yolo11n.pt` on first use if it is absent. See `.env.example` for `YOLO_*` and `TRACK_*` environment settings.
+Open `http://127.0.0.1:8000/`, grant permissions, and choose **START SCAN**. On a phone, camera and microphone permissions require HTTPS (or the phone's own localhost); do not open the development server through a plain `http://` LAN address. After opening AVA on mobile, tap **CONNECT CAMERA** so the permission prompt starts from a user gesture, then tap **ENABLE AVA VOICE** for hands-free commands or **ASK AVA** for a short recorded command. Use **SWITCH TO FRONT/BACK** to change camera and **USE DEMO** if hardware access is unavailable. Ultralytics downloads `yolo11n.pt` on first use if it is absent. See `.env.example` for `YOLO_*` and `TRACK_*` environment settings.
 
 ### Local OCR and STT setup
 

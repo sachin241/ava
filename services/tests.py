@@ -262,8 +262,24 @@ class RichWorkflowTests(SimpleTestCase):
     def test_scene_uses_langgraph_and_deterministic_fallback_when_ollama_disabled(self):
         result = RichWorkflow().run("SCENE", self.state)
         self.assertEqual(result["source"], "deterministic")
-        self.assertIn("path ahead appears clear", result["text"].lower())
-        self.assertIn("door on your right", result["text"].lower())
+        self.assertIn("path ahead looks open", result["text"].lower())
+        self.assertIn("door to your right", result["text"].lower())
+
+    def test_scene_filters_far_background_inventory(self):
+        state = {
+            "objects": [
+                {"name": "person", "direction": "left", "proximity": "far", "motion": "stationary"},
+                {"name": "person", "direction": "right", "proximity": "far", "motion": "stationary"},
+                {"name": "bottle", "direction": "left", "proximity": "far", "motion": "stationary"},
+                {"name": "laptop", "direction": "right", "proximity": "far", "motion": "stationary"},
+            ],
+            "path_status": "clear",
+            "system_state": "clear",
+        }
+        summary = deterministic_summary(state)
+        self.assertIn("people in view", summary.lower())
+        self.assertNotIn("bottle", summary.lower())
+        self.assertNotIn("laptop", summary.lower())
 
     def test_fact_contract_excludes_safety_internal_fields(self):
         facts = verified_facts({**self.state, "active_hazard": 7, "last_alert": {"priority": 95}})

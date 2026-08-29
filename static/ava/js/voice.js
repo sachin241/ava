@@ -103,6 +103,20 @@ window.AvaVoice = (() => {
     }, delay);
   }
 
+  function startRecognitionNow() {
+    clearRestart();
+    restartPending = false;
+    if (!recognition || !handsFree || commandInFlight || speechLocked || window.AvaSpeech?.isSpeaking?.() || recognitionRunning) return;
+    try {
+      recognition.start();
+      restartAttempts = 0;
+    } catch (error) {
+      restartAttempts += 1;
+      console.debug("[AVA VOICE] recognition.start() rejected", error.name || error.message);
+      restartListeningWhenSafe(300);
+    }
+  }
+
   function setupRecognition() {
     if (!Recognition || recognition) return Boolean(Recognition);
     recognition = new Recognition();
@@ -154,7 +168,7 @@ window.AvaVoice = (() => {
     voiceSessionId += 1;
     handsFree = setupRecognition();
     if (!handsFree) throw new Error("Browser speech recognition is unavailable. Use ASK AVA.");
-    maybeStart(0);
+    startRecognitionNow();
     return true;
   }
 

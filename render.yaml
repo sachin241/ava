@@ -1,0 +1,43 @@
+databases:
+  - name: ava-postgres
+    plan: free
+    databaseName: ava
+    user: ava
+
+services:
+  - type: web
+    name: ava
+    runtime: python
+    plan: 1c-2g
+    region: oregon
+    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --no-input
+    preDeployCommand: python manage.py migrate --no-input
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers ${WEB_CONCURRENCY:-2} --timeout 120
+    healthCheckPath: /api/health/
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DJANGO_DEBUG
+        value: "false"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ava-postgres
+          property: connectionString
+      - key: DJANGO_ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: ava
+          property: host
+      - key: WEB_CONCURRENCY
+        value: "2"
+      - key: YOLO_MODEL
+        value: yolo11n.pt
+      - key: YOLO_IMAGE_SIZE
+        value: "832"
+      - key: OLLAMA_ENABLED
+        value: "false"
+      - key: AUTO_SOS_ON_CRITICAL_SIGN
+        value: "false"
