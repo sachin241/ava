@@ -11,9 +11,9 @@ from .workflow import rich_workflow
 from .controller import assistant_controller
 
 
-def respond(text: str, event_type: str, priority: int = 50) -> dict[str, Any]:
+def respond(text: str, event_type: str, priority: int = 50, suppress: bool = False) -> dict[str, Any]:
     request = ResponseRequest(text, priority, event_type, None, int(time.time() * 1000))
-    return response_manager.submit_request(request, suppress=False)
+    return response_manager.submit_request(request, suppress=suppress)
 
 
 def _position(obj: dict[str, Any]) -> str:
@@ -84,6 +84,8 @@ def route(text: str) -> dict[str, Any]:
         return {"intent": intent, "assistant": state, "response": respond(message, "PATH", 75)}
     if intent == "READ":
         return {"intent": intent, "assistant": state, "requires_frame": True, "response": respond("Hold the text steady. I will read it now.", "READ_PROMPT", 65)}
+    if intent == "CURRENCY":
+        return {"intent": intent, "assistant": state, "requires_frame": True, "currency": True, "response": respond("Hold the note steady. I will check the currency now.", "CURRENCY_PROMPT", 65)}
     if intent in {"SCENE", "DESCRIBE"}:
         result = rich_workflow.run("SCENE", world_state.snapshot())
         return {"intent": intent, "assistant": state, "rich_source": result["source"], "response": respond(result["text"], "SCENE", 50)}

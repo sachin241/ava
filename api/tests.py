@@ -36,6 +36,15 @@ class ApiTests(TestCase):
         self.assertEqual(response.json()["intent"], "READ")
         self.assertEqual(response.json()["ocr"]["text"], "Emergency Exit")
 
+    @patch("api.views.recognise_indian_currency_image")
+    def test_currency_endpoint_recognises_indian_note_text(self, recognise):
+        from services.currency import CurrencyResult
+        recognise.return_value = CurrencyResult(500, "high", "This looks like an Indian 500 rupee note.", ["test"], note_detected=True)
+        response = self.client.post("/api/interaction/currency/", {"image": self.image_upload()})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["intent"], "CURRENCY")
+        self.assertEqual(response.json()["currency"]["denomination"], 500)
+
     @patch("api.views.stt_service.transcribe", return_value="Is the path clear?")
     def test_transcribe_routes_path_request(self, transcribe):
         audio = SimpleUploadedFile("command.wav", b"audio", content_type="audio/wav")

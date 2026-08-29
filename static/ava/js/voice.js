@@ -4,6 +4,7 @@ window.AvaVoice = (() => {
   const status = document.querySelector("#listening-status");
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
+  let recognitionLanguage = "en-US";
   let handsFree = false;
   let commandHandler = null;
   let commandInFlight = false;
@@ -11,8 +12,18 @@ window.AvaVoice = (() => {
   let restartTimer = null;
   let recognitionRunning = false;
   let restartPending = false;
+  let recognitionStartRequested = false;
   let voiceSessionId = 0;
   let restartAttempts = 0;
+
+  function setLanguage(value) {
+    recognitionLanguage = value || "en-US";
+    if (recognition) recognition.lang = recognitionLanguage;
+  }
+
+  function canStartRecognition() {
+    return Boolean(recognition && handsFree && !commandInFlight && !speechLocked && !window.AvaSpeech?.isSpeaking?.() && !recognitionRunning && !restartPending && !recognitionStartRequested);
+  }
 
   function wavBlob(samples, rate) {
     const buffer = new ArrayBuffer(44 + samples.length * 2);
@@ -83,18 +94,23 @@ window.AvaVoice = (() => {
 
   function restartListeningWhenSafe(delay = 350) {
     clearRestart();
-    restartPending = true;
     const session = voiceSessionId;
     if (!recognition || !handsFree || commandInFlight || speechLocked || window.AvaSpeech?.isSpeaking?.()) return;
-    if (recognitionRunning) { restartPending = false; return; }
+    if (recognitionRunning || recognitionStartRequested) { restartPending = false; return; }
+    restartPending = true;
     status.textContent = "Preparing to listen…";
     restartTimer = window.setTimeout(() => {
       restartTimer = null;
-      if (session !== voiceSessionId || !recognition || !handsFree || commandInFlight || speechLocked || window.AvaSpeech?.isSpeaking?.() || recognitionRunning) return;
+      if (session !== voiceSessionId || !recognition || !handsFree || commandInFlight || speechLocked || window.AvaSpeech?.isSpeaking?.() || recognitionRunning || recognitionStartRequested) {
+        restartPending = false;
+        return;
+      }
       try {
+        recognitionStartRequested = true;
         recognition.start();
         restartAttempts = 0;
       } catch (error) {
+        recognitionStartRequested = false;
         restartAttempts += 1;
         const retry = Math.min(3000, 300 * (2 ** Math.min(restartAttempts, 3)));
         console.debug("[AVA VOICE] recognition.start() rejected", error.name || error.message);
@@ -106,11 +122,13 @@ window.AvaVoice = (() => {
   function startRecognitionNow() {
     clearRestart();
     restartPending = false;
-    if (!recognition || !handsFree || commandInFlight || speechLocked || window.AvaSpeech?.isSpeaking?.() || recognitionRunning) return;
+    if (!canStartRecognition()) return;
     try {
+      recognitionStartRequested = true;
       recognition.start();
       restartAttempts = 0;
     } catch (error) {
+      recognitionStartRequested = false;
       restartAttempts += 1;
       console.debug("[AVA VOICE] recognition.start() rejected", error.name || error.message);
       restartListeningWhenSafe(300);
@@ -120,12 +138,13 @@ window.AvaVoice = (() => {
   function setupRecognition() {
     if (!Recognition || recognition) return Boolean(Recognition);
     recognition = new Recognition();
-    recognition.lang = "en-US";
+    recognition.lang = recognitionLanguage;
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onstart = () => {
       recognitionRunning = true;
+      recognitionStartRequested = false;
       restartPending = false;
       console.debug("[AVA STT] onstart", { session: voiceSessionId });
       status.textContent = "Listening. Say a command.";
@@ -138,6 +157,7 @@ window.AvaVoice = (() => {
       if (!result || !result.isFinal || session !== voiceSessionId) return;
       commandInFlight = true;
       recognitionRunning = false;
+      recognitionStartRequested = false;
       console.debug("[AVA STT] onresult", { session, transcript: result[0].transcript });
       try { recognition.stop(); } catch (_) {}
       const transcript = result[0].transcript.trim();
@@ -151,12 +171,14 @@ window.AvaVoice = (() => {
     };
     recognition.onerror = (event) => {
       recognitionRunning = false;
+      recognitionStartRequested = false;
       console.debug("[AVA STT] onerror", { session: voiceSessionId, error: event.error });
       status.textContent = event.error === "not-allowed" ? "Microphone permission denied." : `Speech recognition: ${event.error}.`;
       if (handsFree && !commandInFlight && !["not-allowed", "service-not-allowed"].includes(event.error)) restartListeningWhenSafe(event.error === "no-speech" ? 300 : 800);
     };
     recognition.onend = () => {
       recognitionRunning = false;
+      recognitionStartRequested = false;
       console.debug("[AVA STT] onend", { session: voiceSessionId });
       if (handsFree && !speechLocked && !commandInFlight && !window.AvaSpeech?.isSpeaking?.()) restartListeningWhenSafe(700);
     };
@@ -177,6 +199,8 @@ window.AvaVoice = (() => {
     voiceSessionId += 1;
     commandInFlight = false;
     recognitionRunning = false;
+    recognitionStartRequested = false;
+    restartPending = false;
     clearRestart();
     if (recognition) try { recognition.stop(); } catch (_) {}
   }
@@ -185,6 +209,8 @@ window.AvaVoice = (() => {
     handsFree = false;
     voiceSessionId += 1;
     recognitionRunning = false;
+    recognitionStartRequested = false;
+    restartPending = false;
     clearRestart();
     if (recognition) try { recognition.stop(); } catch (_) {}
   }
@@ -214,6 +240,7 @@ window.AvaVoice = (() => {
     stop,
     active: () => Boolean(context),
     setStatus: (message) => { status.textContent = message; },
+    setLanguage,
     enable,
     disable,
     pause,

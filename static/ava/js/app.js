@@ -28,10 +28,15 @@
   let droppedFrames = 0;
   let completedFrames = 0;
   let scanStartedAt = 0;
+  let currencyRequestInFlight = false;
+  let lastCurrencyScanAt = 0;
+  let lastCurrencyAnnouncement = { denomination: null, at: 0 };
   const hasConnectCameraButton = Boolean(connectCameraButton);
   const hasCameraSwitchButton = Boolean(cameraSwitchButton);
   const hasDemoButton = Boolean(demoButton);
   const hasSpeechLanguage = Boolean(speechLanguage);
+  const SCAN_INTERVAL_MS = 320;
+  const CURRENCY_SCAN_INTERVAL_MS = 0;
   const isSecureMediaContext = () => Boolean(window.isSecureContext || ["localhost", "127.0.0.1"].includes(location.hostname));
   const isLikelyMobile = () => Boolean(window.matchMedia?.("(pointer: coarse)")?.matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
   const secureOriginMessage = "Camera and microphone require HTTPS on a phone. Use https:// for the computer's LAN address, or open AVA on the phone's own localhost.";
@@ -105,6 +110,8 @@
       await processLatestFrame();
     } else if (intent === "READ" && result.requires_frame) {
       await readCurrentFrame();
+    } else if (intent === "CURRENCY" && result.requires_frame) {
+      await checkCurrencyInFrame(await window.AvaCamera.captureLatest(), true);
     } else if (intent === "STOP_SPEAKING" || intent === "STOP") {
       window.AvaSpeech.stop();
     } else if (intent === "CHANGE_LANGUAGE" && result.language) {
@@ -122,19 +129,21 @@
       const frame = await window.AvaCamera.captureLatest();
       if (!frame) throw new Error("Unable to capture a camera frame.");
       const result = await window.AvaApi.detect(frame);
+      checkCurrencyInFrame(frame);
       completedFrames += 1;
       renderDetections(result.detections, result.world_state);
       systemState.textContent = `${isScanning ? "MONITORING" : "IDLE"}; path ${result.safety.path_status}.`;
       // A clear-path transition is useful in the UI but is not narrated on
       // every passive frame; users can ask "is the path clear?" explicitly.
-      const audibleResponse = result.responses.find((decision) => decision.action !== "DROP" && decision.request?.event_type !== "PATH_CLEARED");
+      const filteredResponses = result.responses.filter((decision) => decision.action !== "DROP" && decision.request?.event_type !== "PATH_CLEARED");
+      const audibleResponse = filteredResponses.find(Boolean);
       if (audibleResponse) window.AvaSpeech.handle(audibleResponse);
       inferenceTime.textContent = `Inference: ${result.inference_ms} ms`;
       const summary = result.detections.length
         ? `Scene updated. Path ${result.safety.path_status}.`
         : "Scene updated. No objects detected.";
       detectionStatus.textContent = summary;
-      if (!audibleResponse && result.responses.length) window.AvaSpeech.handleAll(result.responses);
+      if (!audibleResponse && filteredResponses.length) window.AvaSpeech.handleAll(filteredResponses);
       updateMetrics(result);
     } catch (error) {
       detectionStatus.textContent = error.message;
@@ -155,6 +164,26 @@
     } catch (error) { detectionStatus.textContent = error.message; }
   }
 
+  async function checkCurrencyInFrame(frame, force = false) {
+    if (!frame || currencyRequestInFlight) return;
+    const now = performance.now();
+    if (!force && (!isScanning || now - lastCurrencyScanAt < CURRENCY_SCAN_INTERVAL_MS)) return;
+    currencyRequestInFlight = true;
+    lastCurrencyScanAt = now;
+    try {
+      const result = await window.AvaApi.currency(frame);
+      if (!result.currency?.denomination || result.currency.confidence === "low" || !result.response || result.response.action === "DROP") return;
+      if (!force && lastCurrencyAnnouncement.denomination === result.currency.denomination && now - lastCurrencyAnnouncement.at < 15000) return;
+      lastCurrencyAnnouncement = { denomination: result.currency.denomination, at: now };
+      detectionStatus.textContent = `Indian currency detected: INR ${result.currency.denomination}.`;
+      window.AvaSpeech.handle(result.response);
+    } catch (error) {
+      console.debug("[AVA CURRENCY] recognition unavailable", error.message);
+    } finally {
+      currencyRequestInFlight = false;
+    }
+  }
+
   function toggleScan() {
     isScanning = !isScanning;
     scanButton.setAttribute("aria-pressed", String(isScanning));
@@ -162,7 +191,7 @@
       droppedFrames = 0; completedFrames = 0; scanStartedAt = performance.now();
       scanButton.textContent = "STOP SCAN";
       processLatestFrame();
-      scanTimer = window.setInterval(() => processLatestFrame(), 400);
+      scanTimer = window.setInterval(() => processLatestFrame(), SCAN_INTERVAL_MS);
     } else {
       window.clearInterval(scanTimer); scanTimer = null;
       scanButton.textContent = "START SCAN";
@@ -311,6 +340,7 @@
   if (hasSpeechLanguage) {
     speechLanguage.addEventListener("change", () => {
       window.AvaSpeech.setLanguage(speechLanguage.value);
+      window.AvaVoice?.setLanguage?.(speechLanguage.value);
       audioStatus.textContent = `Speech language selected: ${speechLanguage.options[speechLanguage.selectedIndex].text}.`;
     });
   }

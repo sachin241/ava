@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Literal
 import re
 
-Intent = Literal["START_MONITORING", "STOP_MONITORING", "PAUSE_MONITORING", "RESUME_MONITORING", "SCAN", "LOCATE", "PATH", "PATH_STATUS", "READ", "DESCRIBE", "SCENE", "REPEAT", "STOP_SPEAKING", "STOP", "MUTE", "UNMUTE", "CHANGE_LANGUAGE", "SOS", "HELP", "UNKNOWN"]
+Intent = Literal["START_MONITORING", "STOP_MONITORING", "PAUSE_MONITORING", "RESUME_MONITORING", "SCAN", "LOCATE", "PATH", "PATH_STATUS", "READ", "CURRENCY", "DESCRIBE", "SCENE", "REPEAT", "STOP_SPEAKING", "STOP", "MUTE", "UNMUTE", "CHANGE_LANGUAGE", "SOS", "HELP", "UNKNOWN"]
 
 
 def classify(text: str) -> Intent:
@@ -35,6 +35,8 @@ def classify(text: str) -> Intent:
         return "STOP_SPEAKING"
     if any(word in value for word in ("read", "sign", "text")):
         return "READ"
+    if any(word in value for word in ("currency", "money", "rupee", "rupees", "note", "cash", "bill")):
+        return "CURRENCY"
     if any(word in value for word in ("where is", "locate", "find")):
         return "LOCATE"
     if value in {"path status", "path state"}:

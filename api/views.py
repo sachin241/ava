@@ -18,6 +18,7 @@ from services.stt import SttAudioError, SttUnavailableError, stt_service
 from services.interaction import respond, route
 from services.controller import assistant_controller
 from services.danger import explain_dangers
+from services.currency import currency_service, recognise_indian_currency_image
 
 logger = logging.getLogger(__name__)
 safety_engine = SafetyEngine()
@@ -49,7 +50,7 @@ def _auto_sos_for_sign(dangers: list[dict]) -> dict | None:
 
 @api_view(["GET"])
 def health(request):
-    return Response({"status": "ok", "assistant": assistant_controller.snapshot(), "stt": stt_service.status(), "yolo": yolo_service.status(), "tracking": world_state.telemetry(), "rich": {"langgraph": True, "ollama_enabled": settings.OLLAMA_ENABLED, "ollama_model": settings.OLLAMA_MODEL}})
+    return Response({"status": "ok", "assistant": assistant_controller.snapshot(), "stt": stt_service.status(), "yolo": yolo_service.status(), "currency": currency_service.status(), "tracking": world_state.telemetry(), "rich": {"langgraph": True, "ollama_enabled": settings.OLLAMA_ENABLED, "ollama_model": settings.OLLAMA_MODEL}})
 
 
 @api_view(["POST"])
@@ -125,6 +126,29 @@ def read(request):
         world = world_state.apply_safety(summary, accepted["request"] if accepted else None)
     spoken = explain_dangers(world.get("dangers", [])) if world.get("dangers") else result.text
     return Response({"ocr": {"text": result.text, "confidence": result.confidence, "attempts": result.attempts, "elapsed_ms": result.elapsed_ms}, "world_state": world, "safety": {"events": [event.public() for event in events], **summary}, "responses": responses, "intent": "READ", "response": respond(spoken, "OCR", 65)})
+
+
+@api_view(["POST"])
+def currency(request):
+    image = request.FILES.get("image")
+    if image is None:
+        return Response({"error": "Upload the current camera frame using the 'image' field."}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        currency_result = recognise_indian_currency_image(image)
+    except Exception as error:
+        return Response({"error": f"The uploaded currency frame is not a valid image: {error}"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({
+        "ocr": {"text": currency_result.ocr_text, "confidence": currency_result.ocr_confidence},
+        "currency": {
+            "country": "IN",
+            "denomination": currency_result.denomination,
+            "confidence": currency_result.confidence,
+            "evidence": currency_result.evidence,
+            "note_detected": currency_result.note_detected,
+        },
+        "intent": "CURRENCY",
+        "response": respond(currency_result.message, "CURRENCY", 65, suppress=True) if currency_result.denomination and currency_result.confidence != "low" else {"action": "DROP", "request": None},
+    })
 
 
 @api_view(["POST"])

@@ -1,4 +1,7 @@
+from io import BytesIO
+from types import SimpleNamespace
 from django.test import SimpleTestCase, override_settings
+from PIL import Image, ImageDraw
 from unittest.mock import patch
 
 from .frame_buffer import LatestFrameBuffer
@@ -13,6 +16,7 @@ from .context import deterministic_summary, verified_facts
 from .validation import validate_scene_response
 from .workflow import RichWorkflow
 from .danger import classify_detections, classify_text, classify_sign, normalize_sign_text, UNKNOWN_HAZARD
+from .currency import recognise_indian_currency, recognise_indian_currency_image
 
 
 class DangerClassifierTests(SimpleTestCase):
@@ -224,6 +228,7 @@ class InteractionTests(SimpleTestCase):
         self.assertEqual(classify("Resume"), "RESUME_MONITORING")
         self.assertEqual(classify("Mute"), "MUTE")
         self.assertEqual(classify("Emergency"), "SOS")
+        self.assertEqual(classify("Recognize currency"), "CURRENCY")
 
     def test_deterministic_intent_routing(self):
         self.assertEqual(classify("Where is the door?"), "LOCATE")
@@ -232,6 +237,11 @@ class InteractionTests(SimpleTestCase):
         self.assertEqual(classify("Describe my surroundings."), "SCENE")
         self.assertEqual(classify("Repeat."), "REPEAT")
         self.assertEqual(classify("Stop."), "STOP")
+
+    def test_currency_command_requires_frame(self):
+        result = route("What rupee note is this?")
+        self.assertEqual(result["intent"], "CURRENCY")
+        self.assertTrue(result["requires_frame"])
 
     @patch("services.interaction.response_manager")
     @patch("services.interaction.world_state")
@@ -244,6 +254,28 @@ class InteractionTests(SimpleTestCase):
 
     def test_ocr_cleanup_collapses_noise(self):
         self.assertEqual(_clean(" Exit\n\n  Ahead\x0c"), "Exit Ahead")
+
+    def test_indian_currency_recognises_clear_note_text(self):
+        result = recognise_indian_currency("Reserve Bank of India Five Hundred Rupees 500", 82.0)
+        self.assertEqual(result.denomination, 500)
+        self.assertEqual(result.confidence, "high")
+
+    def test_indian_currency_avoids_unclear_denominations(self):
+        result = recognise_indian_currency("Reserve Bank of India 100 500", 65.0)
+        self.assertIsNone(result.denomination)
+
+    def test_indian_currency_does_not_guess_when_ocr_is_unclear(self):
+        image = Image.new("RGB", (640, 360), "white")
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((90, 110, 550, 300), fill=(145, 140, 132))
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG")
+        buffer.seek(0)
+        with patch("services.currency.CurrencyService._model_recognition", return_value=([90, 110, 550, 300], ["currency model confidence 94%"])):
+            with patch("services.currency.CurrencyService._ocr_candidates", return_value=[]):
+                result = recognise_indian_currency_image(buffer)
+        self.assertIsNone(result.denomination)
+        self.assertEqual(result.confidence, "low")
 
 
 class RichWorkflowTests(SimpleTestCase):
@@ -303,3 +335,34 @@ class RichWorkflowTests(SimpleTestCase):
     def test_invalid_ollama_text_falls_back(self, describe):
         result = RichWorkflow().run("SCENE", self.state)
         self.assertEqual(result["source"], "deterministic")
+
+
+class CurrencyModelTests(SimpleTestCase):
+    def test_currency_model_note_detection_allows_ocr_to_choose_denomination(self):
+        from .currency import currency_service, recognise_indian_currency_image
+
+        class FakeResult:
+            boxes = [type("FakeBox", (), {"conf": [0.94], "cls": [6], "xyxy": [[10.0, 10.0, 500.0, 240.0]]})()]
+
+        fake_model = SimpleNamespace(predict=lambda *args, **kwargs: [FakeResult()])
+        image = Image.new("RGB", (640, 360), "white")
+        buffer = BytesIO()
+        image.save(buffer, format="JPEG")
+        buffer.seek(0)
+
+        with patch.object(currency_service, "_load_model", return_value=fake_model):
+            with patch("services.currency.CurrencyService._ocr_candidates", return_value=[(
+                type("OCR", (), {
+                    "denomination": 100,
+                    "confidence": "high",
+                    "message": "This looks like an Indian 100 rupee note.",
+                    "evidence": ["100", "Reserve Bank of India"],
+                    "ocr_confidence": 72.0,
+                })(),
+                "Reserve Bank of India 100 Rupees",
+            )]):
+                result = recognise_indian_currency_image(buffer)
+
+        self.assertEqual(result.denomination, 100)
+        self.assertEqual(result.confidence, "high")
+        self.assertTrue(result.note_detected)
