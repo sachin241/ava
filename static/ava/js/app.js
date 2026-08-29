@@ -235,6 +235,7 @@
       askButton.disabled = false;
       if (hasCameraSwitchButton) cameraSwitchButton.disabled = false;
       setCameraSwitchLabel(facing);
+      if (!isScanning) toggleScan();
       return true;
     } catch (error) {
       cameraStatus.textContent = `Camera unavailable: ${error.message}${hasConnectCameraButton ? " Tap CONNECT CAMERA to try again." : ""}`;
@@ -245,20 +246,20 @@
   async function initialise() {
     if (!isSecureMediaContext()) {
       await useDemo(`${secureOriginMessage} Prepared demo ready.`);
+      if (!isScanning) toggleScan();
       checkMicrophone();
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
       await useDemo("Camera access is not supported by this browser. Prepared demo ready.");
+      if (!isScanning) toggleScan();
       checkMicrophone();
       return;
     }
-    if (isLikelyMobile()) {
-      cameraStatus.textContent = "Tap CONNECT CAMERA to allow the mobile camera.";
-      checkMicrophone();
-      return;
+    if (!await startLiveCamera()) {
+      await useDemo(`${cameraStatus.textContent}. Prepared demo ready.`);
+      if (!isScanning) toggleScan();
     }
-    if (!await startLiveCamera()) await useDemo(`${cameraStatus.textContent}. Prepared demo ready.`);
     checkMicrophone();
   }
 
@@ -277,6 +278,7 @@
       scanButton.disabled = false;
       readButton.disabled = false;
       askButton.disabled = false;
+      if (!isScanning) toggleScan();
     } catch (error) { cameraStatus.textContent = error.message; }
   }
 
