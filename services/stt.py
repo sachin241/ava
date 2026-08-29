@@ -18,6 +18,16 @@ class SttAudioError(ValueError):
 
 
 class SttService:
+    def status(self) -> dict[str, object]:
+        try:
+            import vosk  # noqa: F401
+        except ImportError:
+            return {"available": False, "reason": "Vosk is not installed."}
+        model_path = Path(settings.VOSK_MODEL_PATH)
+        if not model_path.is_dir():
+            return {"available": False, "reason": f"Local Vosk model not found at {model_path}. Download a Vosk model and set VOSK_MODEL_PATH."}
+        return {"available": True, "reason": "Local Vosk model ready."}
+
     def transcribe(self, upload: BinaryIO) -> str:
         try:
             from vosk import KaldiRecognizer, Model
@@ -25,7 +35,7 @@ class SttService:
             raise SttUnavailableError("Vosk is unavailable. Install requirements and a local Vosk model.") from error
         model_path = Path(settings.VOSK_MODEL_PATH)
         if not model_path.is_dir():
-            raise SttUnavailableError(f"Local Vosk model not found at {model_path}.")
+            raise SttUnavailableError(f"Local Vosk model not found at {model_path}. Download a Vosk model, extract it there, or use browser voice control.")
         try:
             audio = wave.open(upload, "rb")
             if audio.getnchannels() != 1 or audio.getsampwidth() != 2:

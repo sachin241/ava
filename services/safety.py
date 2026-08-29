@@ -59,7 +59,7 @@ class SafetyEngine:
             return "high"
         return "low"
 
-    def evaluate(self, objects: list[dict[str, Any]], timestamp: int) -> tuple[list[SafetyEvent], dict[str, Any]]:
+    def evaluate(self, objects: list[dict[str, Any]], timestamp: int, dangers: list[dict[str, Any]] | None = None) -> tuple[list[SafetyEvent], dict[str, Any]]:
         events: list[SafetyEvent] = []
         levels: dict[int, SafetyLevel] = {}
         hazards: list[tuple[dict[str, Any], SafetyLevel]] = []
@@ -81,6 +81,22 @@ class SafetyEngine:
             previous = self._previous_levels.get(object_id, "low")
             if level == "critical" and previous != "critical":
                 events.append(SafetyEvent("OBSTACLE_APPROACHING", 95, object_id, obj["name"], obj["direction"], level, timestamp))
+
+        # Semantic danger facts (for example OCR signs) enter the same safety
+        # event stream; the classifier itself never speaks or sets priority.
+        for danger in dangers or []:
+            if not danger.get("active", True) or float(danger.get("confidence", 0)) < 0.55:
+                continue
+            severity = danger.get("severity", "medium")
+            if severity == "critical":
+                priority = 100 if danger.get("type") in {"EMERGENCY", "SOS", "FIRE", "EVACUATION"} else 95
+                level: SafetyLevel = "critical"
+            elif severity == "high":
+                priority, level = 90, "high"
+            else:
+                priority, level = 75, "low"
+            if priority >= 90:
+                events.append(SafetyEvent("DANGER_DETECTED", priority, None, danger.get("type"), danger.get("direction"), level, timestamp))
         blocked_candidate = bool(hazards)
         if blocked_candidate:
             self._blocked_streak += 1
@@ -112,9 +128,13 @@ class SafetyEngine:
         self._previous_levels = levels
         self._path_blocked = blocked
         lead = max(hazards, key=lambda item: 2 if item[1] == "critical" else 1, default=(None, "low"))[0]
+        semantic_levels = [danger.get("severity") for danger in (dangers or []) if danger.get("active", True) and float(danger.get("confidence", 0)) >= 0.55]
+        semantic_critical = "critical" in semantic_levels
+        semantic_high = "high" in semantic_levels
         summary = {
-            "system_state": "critical" if any(level == "critical" for _, level in hazards) else "caution" if blocked else "clear",
+            "system_state": "critical" if any(level == "critical" for _, level in hazards) or semantic_critical else "caution" if blocked or semantic_high else "clear",
             "path_status": "blocked" if blocked else "clear",
             "active_hazard": lead["id"] if lead else None,
+            "dangers": [danger for danger in (dangers or []) if danger.get("active", True)],
         }
         return events, summary

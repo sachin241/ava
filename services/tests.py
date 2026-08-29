@@ -7,10 +7,43 @@ from .response import ResponseManager, ResponseRequest
 from .safety import SafetyEngine, SafetyEvent, path_overlap_for_bbox
 from .intent import classify
 from .interaction import route
+from .controller import AssistantController
 from .ocr import _clean
 from .context import deterministic_summary, verified_facts
 from .validation import validate_scene_response
 from .workflow import RichWorkflow
+from .danger import classify_detections, classify_text, classify_sign, normalize_sign_text, UNKNOWN_HAZARD
+
+
+class DangerClassifierTests(SimpleTestCase):
+    def obj(self, name="chair", confidence=0.9, direction="center", proximity="near", motion="stationary"):
+        return {"id": 1, "name": name, "confidence": confidence, "direction": direction, "proximity": proximity, "motion": motion}
+
+    def test_chair_approaching_becomes_collision_hazard(self):
+        result = classify_detections([self.obj(motion="approaching")], 10)
+        self.assertEqual(result[0]["type"], "COLLISION_HAZARD")
+
+    def test_stairs_becomes_stair_hazard(self):
+        self.assertEqual(classify_detections([self.obj("stairs")])[0]["type"], "STAIR_HAZARD")
+
+    def test_ocr_semantic_signs(self):
+        self.assertEqual(classify_text("ROAD WORK AHEAD")[0]["type"], "ROAD_WORK")
+        self.assertEqual(classify_text("WET FLOOR")[0]["type"], "WET_FLOOR")
+        self.assertEqual(classify_text("HIGH VOLTAGE")[0]["type"], "ELECTRICAL_HAZARD")
+
+    def test_unknown_warning_and_low_confidence(self):
+        self.assertEqual(classify_text("CAUTION")[0]["type"], UNKNOWN_HAZARD)
+        self.assertEqual(classify_text("HIGH VOLTAGE", 0.3)[0]["confidence"], 0.3)
+
+    def test_sign_normalization_and_symbol_fusion(self):
+        self.assertEqual(normalize_sign_text("  wet---  floor! "), "WET FLOOR")
+        result = classify_sign("HIGH VOLTAGE", ["⚡"], 0.8)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["type"], "ELECTRICAL_HAZARD")
+        self.assertGreater(result[0]["confidence"], 0.8)
+
+    def test_ordinary_text_is_not_a_danger(self):
+        self.assertEqual(classify_sign("Library opening hours"), [])
 
 
 @override_settings(TRACK_MAX_AGE_MS=100, TRACK_HISTORY_SIZE=12)
@@ -174,6 +207,24 @@ class ResponseManagerTests(SimpleTestCase):
 
 
 class InteractionTests(SimpleTestCase):
+    def test_assistant_controller_transitions_are_deterministic(self):
+        controller = AssistantController()
+        self.assertEqual(controller.snapshot()["state"], "IDLE")
+        self.assertEqual(controller.handle("START_MONITORING")["state"], "MONITORING")
+        self.assertEqual(controller.handle("PAUSE_MONITORING")["state"], "PAUSED")
+        self.assertEqual(controller.handle("RESUME_MONITORING")["state"], "MONITORING")
+        self.assertEqual(controller.handle("STOP_MONITORING")["state"], "IDLE")
+        self.assertTrue(controller.handle("MUTE")["muted"])
+        self.assertFalse(controller.handle("UNMUTE")["muted"])
+
+    def test_extended_voice_commands_classify(self):
+        self.assertEqual(classify("Start monitoring"), "START_MONITORING")
+        self.assertEqual(classify("Stop monitoring"), "STOP_MONITORING")
+        self.assertEqual(classify("Pause"), "PAUSE_MONITORING")
+        self.assertEqual(classify("Resume"), "RESUME_MONITORING")
+        self.assertEqual(classify("Mute"), "MUTE")
+        self.assertEqual(classify("Emergency"), "SOS")
+
     def test_deterministic_intent_routing(self):
         self.assertEqual(classify("Where is the door?"), "LOCATE")
         self.assertEqual(classify("Is the path clear?"), "PATH")

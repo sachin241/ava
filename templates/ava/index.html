@@ -27,6 +27,7 @@
       <button id="connect-camera-button" type="button">CONNECT CAMERA</button>
       <button id="demo-button" type="button" aria-pressed="false">USE DEMO</button>
       <button id="camera-switch-button" type="button" disabled>SWITCH CAMERA</button>
+      <button id="voice-control-button" type="button">ENABLE AVA VOICE</button>
     </div>
     <p id="placeholder-note" class="hint">ASK AVA records a short local command when a Vosk model is configured. SOS creates a local priority-100 alert only; it does not contact emergency services.</p>
   </section>
@@ -34,11 +35,13 @@
   <section class="readiness" aria-labelledby="readiness-heading">
     <h2 id="readiness-heading">Device readiness</h2>
     <p><strong>Microphone:</strong> <span id="microphone-status">Checking…</span></p>
+    <p><strong>Speech recognition:</strong> <span id="stt-status" role="status">Checking...</span></p>
+    <p><strong>Voice control:</strong> <span id="voice-control-status" role="status">Not enabled.</span></p>
     <p><strong>Listening:</strong> <span id="listening-status" role="status">Idle.</span></p>
     <p><strong>Audio output:</strong> <span id="audio-status">Waiting for interaction…</span></p>
     <p><strong>Speaking:</strong> <span id="speaking-status" role="status">Idle.</span></p>
     <p><strong>Current message:</strong> <span id="spoken-message" aria-live="polite">None.</span></p>
-    <p><strong>System state:</strong> <span id="system-state" role="status">Monitoring.</span></p>
+    <p><strong>Assistant state:</strong> <span id="system-state" role="status">IDLE.</span></p>
     <label for="speech-language"><strong>Speech language:</strong></label>
     <select id="speech-language" aria-describedby="speech-language-note">
       <option value="en-US">English</option>

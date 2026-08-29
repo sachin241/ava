@@ -4,6 +4,7 @@ window.AvaSpeech = (() => {
   const spokenMessage = document.querySelector("#spoken-message");
   const audioStatus = document.querySelector("#audio-status");
   let language = "en-US";
+  let speechGeneration = 0;
   const criticalPhrases = {
     "hi-IN": {
       EMERGENCY_DETECTED: "आपात स्थिति का पता चला है। कृपया ध्यान दें।",
@@ -15,17 +16,21 @@ window.AvaSpeech = (() => {
   };
 
   function supported() { return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window; }
-  function update(message, status) { spokenMessage.textContent = message || "None."; speakingStatus.textContent = status; }
+  function update(message, status) { spokenMessage.textContent = message || "None."; speakingStatus.textContent = status; document.dispatchEvent(new CustomEvent("ava:speech-state", { detail: { speaking: status === "Speaking." } })); }
   function speak(request, interrupt = false) {
     if (!request || !supported()) { if (!supported()) audioStatus.textContent = "Speech output is not supported by this browser."; return; }
     if (interrupt) window.speechSynthesis.cancel();
-    const cached = request.priority >= 90 ? criticalPhrases[language]?.[request.event_type] : null;
+    const generation = ++speechGeneration;
+    console.debug("[AVA TTS] start requested", { generation, event: request.event_type });
+    // Cached wording is reserved for the emergency phrase. Object-aware
+    // hazard text from the Response Manager must remain intact.
+    const cached = request.event_type === "EMERGENCY_DETECTED" ? criticalPhrases[language]?.[request.event_type] : null;
     const text = cached || request.text;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language;
-    utterance.onstart = () => update(text, "Speaking.");
-    utterance.onend = async () => { update(text, "Idle."); try { handle(await window.AvaApi.completeResponse(request.timestamp)); } catch (_) { /* local speech already finished */ } };
-    utterance.onerror = () => update(request.text, "Speech output unavailable.");
+    utterance.onstart = () => { if (generation === speechGeneration) { console.debug("[AVA TTS] start", { generation }); update(text, "Speaking."); } };
+    utterance.onend = async () => { if (generation !== speechGeneration) return; console.debug("[AVA TTS] end", { generation }); update(text, "Idle."); try { handle(await window.AvaApi.completeResponse(request.timestamp)); } catch (_) { /* local speech already finished */ } };
+    utterance.onerror = () => { if (generation === speechGeneration) { console.debug("[AVA TTS] error", { generation }); update(request.text, "Speech output unavailable."); } };
     window.speechSynthesis.speak(utterance);
   }
   function handle(decision) {
@@ -36,13 +41,14 @@ window.AvaSpeech = (() => {
   function announce(text) {
     if (!text || !supported()) return;
     const utterance = new SpeechSynthesisUtterance(text);
+    const generation = ++speechGeneration;
     utterance.lang = language;
     utterance.rate = 1.02;
-    utterance.onstart = () => update(text, "Speaking.");
-    utterance.onend = () => update(text, "Idle.");
-    utterance.onerror = () => update(text, "Speech output unavailable.");
+    utterance.onstart = () => { if (generation === speechGeneration) update(text, "Speaking."); };
+    utterance.onend = () => { if (generation === speechGeneration) update(text, "Idle."); };
+    utterance.onerror = () => { if (generation === speechGeneration) update(text, "Speech output unavailable."); };
     window.speechSynthesis.speak(utterance);
   }
-  function stop() { if (supported()) window.speechSynthesis.cancel(); update("None.", "Stopped."); }
-  return { handle, handleAll: (decisions) => decisions.forEach(handle), announce, stop, supported, setLanguage: (value) => { language = value; } };
+  function stop() { speechGeneration += 1; if (supported()) window.speechSynthesis.cancel(); console.debug("[AVA TTS] cancelled"); update("None.", "Stopped."); }
+  return { handle, handleAll: (decisions) => decisions.forEach(handle), announce, stop, supported, isSpeaking: () => Boolean(window.speechSynthesis?.speaking || window.speechSynthesis?.pending), setLanguage: (value) => { language = value; } };
 })();

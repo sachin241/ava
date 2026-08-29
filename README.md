@@ -70,6 +70,22 @@ The Python adapters are installed by `requirements.txt`, but their local runtime
 - Install Tesseract OCR and make the `tesseract` executable available on `PATH` for READ.
 - Download and unpack a compatible Vosk model into `models/vosk-model`, or set `VOSK_MODEL_PATH` to its directory, for ASK AVA.
 
+On Windows, the extracted directory must contain Vosk files such as `am`, `conf`, and `graph` directly under `D:\ava\models\vosk-model` (avoid an extra nested folder). For example:
+
+```powershell
+New-Item -ItemType Directory -Force models\vosk-model
+# Download a model from https://alphacephei.com/vosk/models and extract it here.
+Test-Path models\vosk-model\am
+```
+
+Alternatively set an absolute path in `.env`:
+
+```env
+VOSK_MODEL_PATH=D:\\ava\\models\\vosk-model
+```
+
+If you do not want to install a Vosk model, use **ENABLE AVA VOICE** in a browser that supports SpeechRecognition; ASK AVA's recorded-WAV path specifically requires the local model.
+
 Until configured, AVA responds with a clear HTTP 503 and does not send images or audio to an external service.
 
 ### Optional Ollama rich context

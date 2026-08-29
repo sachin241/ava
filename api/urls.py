@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import complete_response, detect, emergency, health, read, repeat_response, stop_response, transcribe
+from .views import command, complete_response, detect, emergency, health, read, repeat_response, stop_response, transcribe
 
 urlpatterns = [
     path("health/", health, name="health"),
@@ -11,4 +11,5 @@ urlpatterns = [
     path("emergency/", emergency, name="emergency"),
     path("interaction/read/", read, name="read"),
     path("interaction/transcribe/", transcribe, name="transcribe"),
+    path("interaction/command/", command, name="command"),
 ]

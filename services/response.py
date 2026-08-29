@@ -30,6 +30,11 @@ class ResponseManager:
         self._queue: list[ResponseRequest] = []
         self._last_important: ResponseRequest | None = None
         self._alert_history: dict[tuple[int | None, str], int] = {}
+        self._muted = False
+
+    def set_muted(self, muted: bool) -> None:
+        with self._lock:
+            self._muted = muted
 
     @staticmethod
     def _public(action: Action, request: ResponseRequest | None) -> dict[str, Any]:
@@ -50,6 +55,8 @@ class ResponseManager:
 
     def submit_request(self, request: ResponseRequest, suppress: bool = True) -> dict[str, Any]:
         with self._lock:
+            if self._muted and request.priority < 90:
+                return self._public("DROP", request)
             self._discard_stale(request.timestamp)
             self._alert_history = {
                 key: seen for key, seen in self._alert_history.items()

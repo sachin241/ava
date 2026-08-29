@@ -19,18 +19,51 @@
   const trackingMetrics = document.querySelector("#tracking-metrics");
   const systemState = document.querySelector("#system-state");
   const speechLanguage = document.querySelector("#speech-language");
+  const voiceControlButton = document.querySelector("#voice-control-button");
+  const voiceControlStatus = document.querySelector("#voice-control-status");
+  const sttStatus = document.querySelector("#stt-status");
   let requestInFlight = false;
   let isScanning = false;
   let scanTimer = null;
   let droppedFrames = 0;
   let completedFrames = 0;
   let scanStartedAt = 0;
-  let lastSceneSpeech = "";
-  let lastSceneSpeechAt = 0;
   const hasConnectCameraButton = Boolean(connectCameraButton);
   const hasCameraSwitchButton = Boolean(cameraSwitchButton);
   const hasDemoButton = Boolean(demoButton);
   const hasSpeechLanguage = Boolean(speechLanguage);
+
+  async function handleHandsFreeCommand(transcript) {
+    if (voiceControlStatus) voiceControlStatus.textContent = "Processing.";
+    console.debug("[AVA VOICE] command received", transcript);
+    try {
+      const result = await window.AvaApi.command(transcript);
+      console.debug("[AVA STATE] intent/controller", result.intent, result.assistant);
+      await applyVoiceCommand(result);
+      if (result.response) window.AvaSpeech.handle(result.response);
+    } catch (error) {
+      detectionStatus.textContent = error.message;
+    } finally {
+      if (voiceControlStatus) voiceControlStatus.textContent = "Active.";
+    }
+  }
+
+  async function enableVoiceControl() {
+    try {
+      if (!window.AvaVoice) throw new Error("Voice capture is unavailable in this page.");
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      mic.getTracks().forEach((track) => track.stop());
+      if (!window.AvaSpeech.supported()) throw new Error("Browser audio/TTS is unavailable.");
+      if (!window.AvaVoice.supportsHandsFree()) throw new Error("Speech recognition is unavailable. Use ASK AVA.");
+      window.AvaVoice.enable(handleHandsFreeCommand);
+      if (voiceControlStatus) voiceControlStatus.textContent = "Active.";
+      if (sttStatus) sttStatus.textContent = "Ready (browser recognition).";
+      if (voiceControlButton) { voiceControlButton.textContent = "VOICE CONTROL: ON"; voiceControlButton.setAttribute("aria-pressed", "true"); }
+    } catch (error) {
+      if (voiceControlStatus) voiceControlStatus.textContent = `Unavailable: ${error.message}`;
+      if (sttStatus) sttStatus.textContent = "Unavailable; use ASK AVA.";
+    }
+  }
 
   function renderDetections(detections, worldState) {
     list.replaceChildren();
@@ -53,27 +86,28 @@
     trackingMetrics.textContent = `Browser FPS: ${browserFps}; server FPS: ${result.tracking.fps}; dropped frames: ${droppedFrames}; active tracks: ${result.tracking.active_tracks}.`;
   }
 
-  function objectSummary(worldState) {
-    const objects = worldState.objects.slice(0, 3).map((object) => {
-      const label = object.name.charAt(0).toUpperCase() + object.name.slice(1);
-      const place = object.direction === "center" ? "ahead" : `on your ${object.direction}`;
-      return `${label} ${place}, ${object.proximity}`;
-    });
-    if (!objects.length) return "No tracked objects.";
-    if (objects.length === 1) return `${objects[0]}.`;
-    if (objects.length === 2) return `${objects[0]} and ${objects[1]}.`;
-    return `${objects.slice(0, -1).join("; ")}, and ${objects[objects.length - 1]}.`;
+  function applyAssistantState(state) {
+    if (!state) return;
+    if (systemState) systemState.textContent = `${state.state}${state.muted ? " (muted)" : ""}.`;
   }
 
-  function shouldAnnounceScene(summary) {
-    if (!isScanning) return false;
-    if (!summary) return false;
-    const now = performance.now();
-    if (summary === lastSceneSpeech && now - lastSceneSpeechAt < 8000) return false;
-    if (window.speechSynthesis?.speaking || window.speechSynthesis?.pending) return false;
-    lastSceneSpeech = summary;
-    lastSceneSpeechAt = now;
-    return true;
+  async function applyVoiceCommand(result) {
+    applyAssistantState(result.assistant);
+    const intent = result.intent;
+    if (intent === "START_MONITORING" || intent === "RESUME_MONITORING") {
+      if (!isScanning) toggleScan();
+    } else if (intent === "STOP_MONITORING" || intent === "PAUSE_MONITORING") {
+      if (isScanning) toggleScan();
+    } else if (intent === "SCAN") {
+      await processLatestFrame();
+    } else if (intent === "READ" && result.requires_frame) {
+      await readCurrentFrame();
+    } else if (intent === "STOP_SPEAKING" || intent === "STOP") {
+      window.AvaSpeech.stop();
+    } else if (intent === "CHANGE_LANGUAGE" && result.language) {
+      window.AvaSpeech.setLanguage(result.language);
+      if (speechLanguage) speechLanguage.value = result.language;
+    }
   }
 
   async function processLatestFrame() {
@@ -87,15 +121,17 @@
       const result = await window.AvaApi.detect(frame);
       completedFrames += 1;
       renderDetections(result.detections, result.world_state);
-      systemState.textContent = `${result.safety.system_state}; path ${result.safety.path_status}.`;
-      const audibleResponse = result.responses.find((decision) => decision.action !== "DROP");
+      systemState.textContent = `${isScanning ? "MONITORING" : "IDLE"}; path ${result.safety.path_status}.`;
+      // A clear-path transition is useful in the UI but is not narrated on
+      // every passive frame; users can ask "is the path clear?" explicitly.
+      const audibleResponse = result.responses.find((decision) => decision.action !== "DROP" && decision.request?.event_type !== "PATH_CLEARED");
       if (audibleResponse) window.AvaSpeech.handle(audibleResponse);
       inferenceTime.textContent = `Inference: ${result.inference_ms} ms`;
       const summary = result.detections.length
-        ? `Detected ${result.detections.length} object(s). ${objectSummary(result.world_state)}`
-        : "No objects detected in the latest frame.";
+        ? `Scene updated. Path ${result.safety.path_status}.`
+        : "Scene updated. No objects detected.";
       detectionStatus.textContent = summary;
-      if (!audibleResponse && shouldAnnounceScene(summary)) window.AvaSpeech.announce(summary);
+      if (!audibleResponse && result.responses.length) window.AvaSpeech.handleAll(result.responses);
       updateMetrics(result);
     } catch (error) {
       detectionStatus.textContent = error.message;
@@ -109,6 +145,7 @@
     detectionStatus.textContent = "Reading the current frame…";
     try {
       const frame = await window.AvaCamera.captureLatest();
+      if (!frame) throw new Error("No camera frame is available. Connect the camera or choose USE DEMO.");
       const result = await window.AvaApi.read(frame);
       detectionStatus.textContent = `Read confidence: ${result.ocr.confidence}%; attempts: ${result.ocr.attempts}; OCR: ${result.ocr.elapsed_ms} ms.`;
       window.AvaSpeech.handle(result.response);
@@ -122,7 +159,7 @@
       droppedFrames = 0; completedFrames = 0; scanStartedAt = performance.now();
       scanButton.textContent = "STOP SCAN";
       processLatestFrame();
-      scanTimer = window.setInterval(processLatestFrame, 400);
+      scanTimer = window.setInterval(() => processLatestFrame(), 400);
     } else {
       window.clearInterval(scanTimer); scanTimer = null;
       scanButton.textContent = "START SCAN";
@@ -197,6 +234,7 @@
       cameraStatus.textContent = message;
       scanButton.disabled = false;
       readButton.disabled = false;
+      askButton.disabled = false;
     } catch (error) { cameraStatus.textContent = error.message; }
   }
 
@@ -207,15 +245,23 @@
   readButton.addEventListener("click", readCurrentFrame);
   askButton.addEventListener("click", async () => {
     try {
+      if (!window.AvaVoice) throw new Error("Voice capture is unavailable in this page.");
       if (!window.AvaVoice.active()) {
         await window.AvaVoice.start(); askButton.textContent = "SEND COMMAND"; askButton.setAttribute("aria-pressed", "true"); return;
       }
       const audio = await window.AvaVoice.stop(); askButton.textContent = "ASK AVA"; askButton.setAttribute("aria-pressed", "false");
       const result = await window.AvaApi.transcribe(audio);
-      window.AvaVoice.setStatus(result.transcript ? `Heard: ${result.transcript}` : "No command heard.");
+      if (window.AvaVoice.setStatus) window.AvaVoice.setStatus(result.transcript ? `Heard: ${result.transcript}` : "No command heard.");
+      else if (voiceControlStatus) voiceControlStatus.textContent = result.transcript ? `Heard: ${result.transcript}` : "No command heard.";
       window.AvaSpeech.handle(result.response);
-      if (result.requires_frame) await readCurrentFrame();
-    } catch (error) { window.AvaVoice.setStatus("Listening unavailable."); detectionStatus.textContent = error.message; askButton.textContent = "ASK AVA"; askButton.setAttribute("aria-pressed", "false"); }
+      await applyVoiceCommand(result);
+    } catch (error) {
+      if (window.AvaVoice?.setStatus) window.AvaVoice.setStatus("Listening unavailable.");
+      else if (voiceControlStatus) voiceControlStatus.textContent = "Listening unavailable.";
+      detectionStatus.textContent = error.message;
+      askButton.textContent = "ASK AVA";
+      askButton.setAttribute("aria-pressed", "false");
+    }
   });
   stopButton.addEventListener("click", async () => {
     window.AvaSpeech.stop();
@@ -227,7 +273,7 @@
   sosButton.addEventListener("click", async () => {
     try {
       const result = await window.AvaApi.emergency();
-      systemState.textContent = "Critical emergency response requested.";
+      systemState.textContent = "EMERGENCY.";
       window.AvaSpeech.handle(result.response);
     } catch (error) { detectionStatus.textContent = error.message; }
   });
@@ -254,5 +300,10 @@
       audioStatus.textContent = `Speech language selected: ${speechLanguage.options[speechLanguage.selectedIndex].text}.`;
     });
   }
+  if (voiceControlButton) voiceControlButton.addEventListener("click", () => {
+    if (voiceControlButton.getAttribute("aria-pressed") === "true") { window.AvaVoice?.disable(); voiceControlButton.textContent = "ENABLE AVA VOICE"; voiceControlButton.setAttribute("aria-pressed", "false"); if (voiceControlStatus) voiceControlStatus.textContent = "Off."; }
+    else enableVoiceControl();
+  });
+  if (sttStatus) window.AvaApi.health().then((health) => { sttStatus.textContent = health.stt?.available ? "Ready (local STT model)." : "Local STT unavailable; browser fallback available if supported."; }).catch(() => { sttStatus.textContent = "Unable to check local STT; browser fallback available if supported."; });
   initialise();
 })();

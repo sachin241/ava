@@ -9,6 +9,7 @@ from typing import Any
 from .spatial import direction_for_bbox, proximity_for_bbox
 from .safety import path_overlap_for_bbox
 from .tracking import ObjectTracker
+from .danger import classify_detections, classify_sign
 
 
 class WorldStateEngine:
@@ -20,7 +21,7 @@ class WorldStateEngine:
 
     @staticmethod
     def _empty_state() -> dict[str, Any]:
-        return {"timestamp": 0, "objects": [], "text": [], "path_status": "unknown", "active_hazard": None, "user_intent": None, "last_alert": None}
+        return {"timestamp": 0, "objects": [], "text": [], "dangers": [], "path_status": "unknown", "active_hazard": None, "user_intent": None, "last_alert": None}
 
     def update(self, detections: list[dict[str, Any]], frame_size: tuple[int, int], timestamp: int | None = None) -> dict[str, Any]:
         timestamp = timestamp or int(time.time() * 1000)
@@ -39,7 +40,14 @@ class WorldStateEngine:
                     "path_overlap": path_overlap_for_bbox(track.bbox, frame_size[0]),
                 })
             self._completed_at.append(timestamp)
-            self._last_state = {"timestamp": timestamp, "objects": objects, "text": [], "path_status": "unknown", "active_hazard": None, "user_intent": None, "last_alert": None}
+            self._last_state = {"timestamp": timestamp, "objects": objects, "text": [], "dangers": classify_detections(objects, timestamp), "path_status": "unknown", "active_hazard": None, "user_intent": None, "last_alert": None}
+            return self._last_state.copy()
+
+    def apply_text(self, text: str, confidence: float = 1.0) -> dict[str, Any]:
+        """Attach bounded OCR text and semantic dangers to the current state."""
+        with self._lock:
+            self._last_state["text"] = [str(text)[:240]] if text else []
+            self._last_state["dangers"] = classify_detections(self._last_state.get("objects", []), self._last_state.get("timestamp")) + classify_sign(text, confidence=confidence, timestamp=self._last_state.get("timestamp"))
             return self._last_state.copy()
 
     def apply_safety(self, summary: dict[str, Any], last_alert: dict[str, Any] | None) -> dict[str, Any]:
